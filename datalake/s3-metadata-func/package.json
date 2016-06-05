@@ -1,0 +1,24 @@
+{
+  "name": "ll",
+  "version": "1.0.0",
+  "description": "Writes S3 Metadata to DynamoDB",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {
+    "async": "^1.5.2",
+    "lodash": "^4.2.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "S3",
+    "Metadata",
+    "DynamoDB"
+  ],
+  "author": "NYLDirect",
+  "license": "ISC"
+}

@@ -1,0 +1,14 @@
+[
+  {
+    "ParameterKey": "Environment",
+    "ParameterValue": "dev"
+  },
+  {
+    "ParameterKey": "ResourceBucketName",
+    "ParameterValue": "zollie-cfn-resources-us-east-1-test"
+  },
+  {
+    "ParameterKey": "TemplateBucketName",
+    "ParameterValue": "zollie-cfn-templates-us-east-1-test"
+  }
+]

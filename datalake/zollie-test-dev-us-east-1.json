@@ -1,0 +1,22 @@
+[
+  {
+    "ParameterKey": "ServiceName",
+    "ParameterValue": "DataLake"
+  },
+  {
+    "ParameterKey": "ResourceBucketName",
+    "ParameterValue": "zollie-cfn-resources-us-east-1-test"
+  },
+  {
+    "ParameterKey": "DataLakeBucketName",
+    "ParameterValue": "zollie-data-lake-us-east-1-test"
+  },
+  {
+    "ParameterKey": "MetaDataTableReadUnits",
+    "ParameterValue": "1"
+  },
+  {
+    "ParameterKey": "MetaDataTableWriteUnits",
+    "ParameterValue": "1"
+  }
+]

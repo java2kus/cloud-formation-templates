@@ -1,0 +1,26 @@
+[
+  {
+    "ParameterKey": "ServiceName",
+    "ParameterValue": "ConfigService"
+  },
+  {
+    "ParameterKey": "DataLakeBucketName",
+    "ParameterValue": "zollie-data-lake-us-east-1-test"
+  },
+  {
+    "ParameterKey": "DeliveryChannelName",
+    "ParameterValue": "zollie-config-delivery-channel-all"
+  },
+  {
+    "ParameterKey": "ConfigRecorderName",
+    "ParameterValue": "zollie-config-recorder-all"
+  },
+  {
+    "ParameterKey": "SNSTopicName",
+    "ParameterValue": "zollie-config-svc"
+  },
+  {
+    "ParameterKey": "ConfigServiceLogDeliveryFrequency",
+    "ParameterValue": "Three_Hours"
+  }
+]

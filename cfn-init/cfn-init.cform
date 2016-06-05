@@ -1,0 +1,159 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "CloudFormation Initialization of Resource and Template Buckets",
+  "Parameters": {
+    "Environment": {
+      "Description": "The Runtime Environment",
+      "Type": "String",
+      "Default": "dev",
+      "AllowedValues": [
+        "dev",
+        "prod"
+      ]
+    },
+    "ResourceBucketName": {
+      "Description": "Name for the Bucket to store CloudFormation resources in",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255,
+      "AllowedPattern": "^[a-z][-a-z0-9]*$",
+      "Default": "cfn-resources"
+    },
+    "TemplateBucketName": {
+      "Description": "Name for the Bucket to store CloudFormation templates in",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255,
+      "AllowedPattern": "^[a-z][-a-z0-9]*$",
+      "Default": "cfn-templates"
+    }
+  },
+  "Resources": {
+    "ResourcesPolicy": {
+      "Type": "AWS::S3::BucketPolicy",
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "s3:*"
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:aws:s3:::",
+                    {
+                      "Ref": "Resources"
+                    }
+                  ]
+                ]
+              },
+              "Principal": {
+                "AWS": [
+                  {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:aws:iam::",
+                        {
+                          "Ref": "AWS::AccountId"
+                        },
+                        ":root"
+                      ]
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "Bucket": {
+          "Ref": "Resources"
+        }
+      }
+    },
+    "Resources": {
+      "Type": "AWS::S3::Bucket",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "BucketName": {
+          "Ref": "ResourceBucketName"
+        }
+      }
+    },
+    "TemplatesPolicy": {
+      "Type": "AWS::S3::BucketPolicy",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "s3:*"
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:aws:s3:::",
+                    {
+                      "Ref": "Templates"
+                    }
+                  ]
+                ]
+              },
+              "Principal": {
+                "AWS": [
+                  {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:aws:iam::",
+                        {
+                          "Ref": "AWS::AccountId"
+                        },
+                        ":root"
+                      ]
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "Bucket": {
+          "Ref": "Templates"
+        }
+      }
+    },
+    "Templates": {
+      "Type": "AWS::S3::Bucket",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "BucketName": {
+          "Ref": "TemplateBucketName"
+        },
+        "VersioningConfiguration": {
+          "Status": "Enabled"
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "Resources": {
+      "Description": "CloudFormation S3 Resource Bucket",
+      "Value": {
+        "Ref": "Resources"
+      }
+    },
+    "Templates": {
+      "Description": "CloudFormation S3 Template Bucket",
+      "Value": {
+        "Ref": "Templates"
+      }
+    }
+  }
+}

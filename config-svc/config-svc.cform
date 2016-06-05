@@ -1,0 +1,247 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Enables the AWS Config Service",
+  "Parameters": {
+    "ServiceName": {
+      "Description": "Becomes the short hostname used in DNS, Naming, Comments, and other things.",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255,
+      "AllowedPattern": "^[a-zA-Z][-a-zA-Z0-9]*$",
+      "Default": "ConfigService"
+    },
+    "DeliveryChannelName": {
+      "Description": "Config Service DeliveryChannel Name",
+      "Type": "String"
+    },
+    "ConfigRecorderName": {
+      "Description": "Config Service Recorder Name",
+      "Type": "String"
+    },
+    "SNSTopicName": {
+      "Description": "Config Service SNS Topic Name",
+      "Type": "String"
+    },
+    "ConfigServiceLogDeliveryFrequency": {
+      "Description": "Delivery Frequency of Config Service Log Records. ",
+      "Type": "String",
+      "Default": "Three_Hours",
+      "AllowedValues": [
+        "One_Hour",
+        "Three_Hours",
+        "Six_Hours",
+        "Twelve_Hours",
+        "TwentyFour_Hours"
+      ]
+    },
+    "DataLakeBucketName": {
+      "Description": "DataLake S3 Bucket Name",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255,
+      "AllowedPattern": "^[a-z][-a-z0-9]*$",
+      "Default": "data-lake"
+    }
+  },
+  "Resources": {
+    "DeliveryChannel": {
+      "Type": "AWS::Config::DeliveryChannel",
+      "Properties": {
+        "Name": {
+          "Ref": "DeliveryChannelName"
+        },
+        "ConfigSnapshotDeliveryProperties": {
+          "DeliveryFrequency": {
+            "Ref": "ConfigServiceLogDeliveryFrequency"
+          }
+        },
+        "S3BucketName": {
+          "Ref": "DataLakeBucketName"
+        },
+        "S3KeyPrefix": "ConfigSvc",
+        "SnsTopicARN": {
+          "Ref": "Topic"
+        }
+      }
+    },
+    "ConfigRecorder": {
+      "Type": "AWS::Config::ConfigurationRecorder",
+      "Properties": {
+        "Name": "default",
+        "RoleARN": {
+          "Fn::GetAtt": [
+            "Role",
+            "Arn"
+          ]
+        }
+      }
+    },
+    "Topic": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "TopicName": {
+          "Ref": "SNSTopicName"
+        }
+      }
+    },
+    "RolePolicies": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyName": "config-svc-put",
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "s3:PutObject"
+              ],
+              "Resource": [
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:s3:::",
+                      {
+                        "Ref": "DataLakeBucketName"
+                      },
+                      "/ConfigSvc",
+                      "/AWSLogs/",
+                      {
+                        "Ref": "AWS::AccountId"
+                      },
+                      "/*"
+                    ]
+                  ]
+                }
+              ],
+              "Condition": {
+                "StringLike": {
+                  "s3:x-amz-acl": "bucket-owner-full-control"
+                }
+              }
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetBucketAcl"
+              ],
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:aws:s3:::",
+                    {
+                      "Ref": "DataLakeBucketName"
+                    }
+                  ]
+                ]
+              }
+            },
+            {
+              "Effect": "Allow",
+              "Action": "sns:Publish",
+              "Resource": {
+                "Ref": "Topic"
+              }
+            },
+            {
+              "Action": [
+                "appstream:Get*",
+                "autoscaling:Describe*",
+                "cloudformation:DescribeStacks",
+                "cloudformation:DescribeStackEvents",
+                "cloudformation:DescribeStackResource",
+                "cloudformation:DescribeStackResources",
+                "cloudformation:GetTemplate",
+                "cloudformation:List*",
+                "cloudfront:Get*",
+                "cloudfront:List*",
+                "cloudtrail:DescribeTrails",
+                "cloudtrail:GetTrailStatus",
+                "cloudwatch:Describe*",
+                "cloudwatch:Get*",
+                "cloudwatch:List*",
+                "config:Put*",
+                "directconnect:Describe*",
+                "dynamodb:GetItem",
+                "dynamodb:BatchGetItem",
+                "dynamodb:Query",
+                "dynamodb:Scan",
+                "dynamodb:DescribeTable",
+                "dynamodb:ListTables",
+                "ec2:Describe*",
+                "elasticache:Describe*",
+                "elasticbeanstalk:Check*",
+                "elasticbeanstalk:Describe*",
+                "elasticbeanstalk:List*",
+                "elasticbeanstalk:RequestEnvironmentInfo",
+                "elasticbeanstalk:RetrieveEnvironmentInfo",
+                "elasticloadbalancing:Describe*",
+                "elastictranscoder:Read*",
+                "elastictranscoder:List*",
+                "iam:List*",
+                "iam:Get*",
+                "kinesis:Describe*",
+                "kinesis:Get*",
+                "kinesis:List*",
+                "opsworks:Describe*",
+                "opsworks:Get*",
+                "route53:Get*",
+                "route53:List*",
+                "redshift:Describe*",
+                "redshift:ViewQueriesInConsole",
+                "rds:Describe*",
+                "rds:ListTagsForResource",
+                "s3:Get*",
+                "s3:List*",
+                "sdb:GetAttributes",
+                "sdb:List*",
+                "sdb:Select*",
+                "ses:Get*",
+                "ses:List*",
+                "sns:Get*",
+                "sns:List*",
+                "sqs:GetQueueAttributes",
+                "sqs:ListQueues",
+                "sqs:ReceiveMessage",
+                "storagegateway:List*",
+                "storagegateway:Describe*",
+                "trustedadvisor:Describe*"
+              ],
+              "Effect": "Allow",
+              "Resource": "*"
+            }
+          ]
+        },
+        "Roles": [
+          {
+            "Ref": "Role"
+          }
+        ]
+      }
+    },
+    "Role": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "config.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Path": "/"
+      }
+    }
+  },
+  "Outputs": {}
+}
