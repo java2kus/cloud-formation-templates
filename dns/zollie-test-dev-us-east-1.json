@@ -1,0 +1,26 @@
+[
+  {
+    "ParameterKey": "ServiceName",
+    "ParameterValue": "DNS"
+  },
+  {
+    "ParameterKey": "AccountName",
+    "ParameterValue": "test"
+  },
+  {
+    "ParameterKey": "ResourceBucketName",
+    "ParameterValue": "zollie-cfn-resources-us-east-1-test"
+  },
+  {
+    "ParameterKey": "RootDomain",
+    "ParameterValue": "zollie.rocks"
+  },
+  {
+    "ParameterKey": "RootDelegationSetId",
+    "ParameterValue": "N1TOPAGY3TICF4"
+  },
+  {
+    "ParameterKey": "DelegationSetId",
+    "ParameterValue": "N3QYRL7T0W5J55"
+  }
+]

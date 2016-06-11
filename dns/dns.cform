@@ -1,0 +1,319 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Domain Name System Setup",
+  "Parameters": {
+    "RootDomain": {
+      "Description": "Root DNS Domain Name - (You should change this to a resolvable name)",
+      "Type": "String"
+    },
+    "ServiceName": {
+      "Description": "Becomes the short hostname used in DNS, Naming, Comments, and other things.",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255,
+      "AllowedPattern": "^[a-zA-Z][-a-zA-Z0-9]*$",
+      "Default": "DNS"
+    },
+    "AccountName": {
+      "Description": "Name for the current AWS Account",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255,
+      "AllowedPattern": "^[a-zA-Z][-a-zA-Z0-9]*$"
+    },
+    "ResourceBucketName": {
+      "Description": "CloudFormation Resources S3 Bucket Name",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255,
+      "AllowedPattern": "^[a-z][-a-z0-9]*$"
+    },
+    "RootDelegationSetId": {
+      "Description": "Root DelegationSetId",
+      "Type": "String"
+    },
+    "DelegationSetId": {
+      "Description": "DelegationSetId",
+      "Type": "String"
+    }
+  },
+  "Mappings": {
+    "084133473015": {
+      "us-east-1": {
+        "NameServers": [
+          "ns-1645.awsdns-13.co.uk.",
+          "ns-367.awsdns-45.com.",
+          "ns-925.awsdns-51.net.",
+          "ns-1448.awsdns-53.org."
+        ]
+      },
+      "us-west-2": {
+        "NameServers": [
+          "ns-1645.awsdns-13.co.uk.",
+          "ns-367.awsdns-45.com.",
+          "ns-925.awsdns-51.net.",
+          "ns-1448.awsdns-53.org."
+        ]
+      }
+    }
+  },
+  "Conditions": {
+    "BuildRoot": {
+      "Fn::Equals": [
+        {
+          "Ref": "AWS::AccountId"
+        },
+        "084133473015"
+      ]
+    }
+  },
+  "Resources": {
+    "PublicRootZone": {
+      "Condition": "BuildRoot",
+      "Type": "Custom::PublicRootZone",
+      "Properties": {
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "Route53Func",
+            "Arn"
+          ]
+        },
+        "Tag": "root",
+        "StackId": {
+          "Ref": "AWS::StackId"
+        },
+        "Name": {
+          "Ref": "RootDomain"
+        },
+        "DelegationSetId": {
+          "Ref": "RootDelegationSetId"
+        },
+        "Comment": "root-PUBLIC"
+      }
+    },
+    "RegionRecordSet": {
+      "Type": "AWS::Route53::RecordSet",
+      "DependsOn": [
+        "PublicRootZone",
+        "PublicRegionZone"
+      ],
+      "Properties": {
+        "HostedZoneId": {
+          "Fn::GetAtt": [
+            "PublicRootZone",
+            "Id"
+          ]
+        },
+        "Comment": {
+          "Fn::Join": [
+            "-",
+            [
+              {
+                "Ref": "AccountName"
+              },
+              {
+                "Ref": "AWS::Region"
+              }
+            ]
+          ]
+        },
+        "Name": {
+          "Fn::Join": [
+            ".",
+            [
+              {
+                "Ref": "AccountName"
+              },
+              {
+                "Ref": "AWS::Region"
+              },
+              {
+                "Ref": "RootDomain"
+              }
+            ]
+          ]
+        },
+        "Type": "NS",
+        "TTL": "900",
+        "ResourceRecords": {
+          "Fn::FindInMap": [
+            {
+              "Ref": "AWS::AccountId"
+            },
+            {
+              "Ref": "AWS::Region"
+            },
+            "NameServers"
+          ]
+        }
+      }
+    },
+    "PublicRegionZone": {
+      "Type": "Custom::PublicRegionZone",
+      "Properties": {
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "Route53Func",
+            "Arn"
+          ]
+        },
+        "Tag": {
+          "Fn::Join": [
+            "-",
+            [
+              {
+                "Ref": "AWS::Region"
+              }
+            ]
+          ]
+        },
+        "StackId": {
+          "Ref": "AWS::StackId"
+        },
+        "Name": {
+          "Fn::Join": [
+            ".",
+            [
+              {
+                "Ref": "AccountName"
+              },
+              {
+                "Ref": "AWS::Region"
+              },
+              {
+                "Ref": "RootDomain"
+              }
+            ]
+          ]
+        },
+        "DelegationSetId": {
+          "Ref": "DelegationSetId"
+        },
+        "Comment": {
+          "Fn::Join": [
+            "-",
+            [
+              {
+                "Ref": "AWS::Region"
+              },
+              "PUBLIC",
+              {
+                "Ref": "AccountName"
+              }
+            ]
+          ]
+        }
+      }
+    },
+    "Route53Func": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Timeout": 300,
+        "Handler": "index.handler",
+        "Description": "Creates Route53 RecordSets with DelegationSetIds",
+        "Role": {
+          "Fn::GetAtt": [
+            "Route53ExecutionRole",
+            "Arn"
+          ]
+        },
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ResourceBucketName"
+          },
+          "S3Key": {
+            "Fn::Join": [
+              "",
+              [
+                {
+                  "Ref": "ServiceName"
+                },
+                ".zip"
+              ]
+            ]
+          }
+        },
+        "Runtime": "nodejs"
+      }
+    },
+    "Route53ExecutionRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "lambda.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Path": "/",
+        "Policies": [
+          {
+            "PolicyName": "dns-route53-access",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:*"
+                  ],
+                  "Resource": "arn:aws:logs:*:*:*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "cloudformation:DescribeStacks"
+                  ],
+                  "Resource": "*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "route53:*"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  "Outputs": {
+    "RootDomain": {
+      "Description": "The Public Root DNS Domain Name",
+      "Value": {
+        "Ref": "RootDomain"
+      }
+    },
+    "PublicRootZone": {
+      "Description": "The Public Root DNS Domain Zone",
+      "Value": {
+        "Fn::GetAtt": [
+          "PublicRootZone",
+          "Id"
+        ]
+      }
+    },
+    "PublicRegionZone": {
+      "Description": "The Public Region DNS Domain Zone",
+      "Value": {
+        "Fn::GetAtt": [
+          "PublicRegionZone",
+          "Id"
+        ]
+      }
+    }
+  }
+}
