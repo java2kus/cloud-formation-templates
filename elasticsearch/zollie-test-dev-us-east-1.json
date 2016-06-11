@@ -1,0 +1,42 @@
+[
+  {
+    "ParameterKey": "ServiceName",
+    "ParameterValue": "Elasticsearch"
+  },
+  {
+    "ParameterKey": "DomainName",
+    "ParameterValue": "es-domain-a"
+  },
+  {
+    "ParameterKey": "AccountName",
+    "ParameterValue": "test"
+  },
+  {
+    "ParameterKey": "ResourceBucketName",
+    "ParameterValue": "zollie-cfn-resources-us-east-1-test"
+  },
+  {
+    "ParameterKey": "RootDomain",
+    "ParameterValue": "zollie.rocks"
+  },
+  {
+    "ParameterKey": "InstanceType",
+    "ParameterValue": "m3.medium.elasticsearch"
+  },
+  {
+    "ParameterKey": "InstanceCount",
+    "ParameterValue": "1"
+  },
+  {
+    "ParameterKey": "ZoneAwarenessEnabled",
+    "ParameterValue": "false"
+  },
+  {
+    "ParameterKey": "AutomatedSnapshotStartHour",
+    "ParameterValue": "0"
+  },
+  {
+    "ParameterKey": "PublicRegionZone",
+    "ParameterValue": "ZADK6SEHACJGA"
+  }
+]

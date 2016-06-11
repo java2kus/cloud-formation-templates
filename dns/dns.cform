@@ -3,7 +3,7 @@
   "Description": "Domain Name System Setup",
   "Parameters": {
     "RootDomain": {
-      "Description": "Root DNS Domain Name - (You should change this to a resolvable name)",
+      "Description": "Root DNS Domain Name",
       "Type": "String"
     },
     "ServiceName": {
