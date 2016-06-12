@@ -1,0 +1,425 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Flow Logs of VPC Traffic",
+  "Parameters": {
+    "ServiceName": {
+      "Description": "Becomes the short hostname used in DNS, Naming, Comments, and other things.",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255,
+      "AllowedPattern": "^[a-zA-Z][-a-zA-Z0-9]*$",
+      "Default": "FlowLogs"
+    },
+    "ResourceBucketName": {
+      "Description": "CloudFormation Resources S3 Bucket Name",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255,
+      "AllowedPattern": "^[a-z][-a-z0-9]*$"
+    },
+    "ResourceIds": {
+      "Description": "One or more subnet, network interface, or VPC Ids",
+      "Type": "String"
+    },
+    "ResourceType": {
+      "Description": "The type of resource on which to create the flow log",
+      "Type": "String",
+      "Default": "VPC",
+      "AllowedValues": [
+        "VPC",
+        "Subnet",
+        "NetworkInterface"
+      ],
+      "ConstraintDescription": "Must be a valid Resource Type"
+    },
+    "TrafficType": {
+      "Description": "The type of traffic to log",
+      "Type": "String",
+      "Default": "ALL",
+      "AllowedValues": [
+        "ACCEPT",
+        "REJECT",
+        "ALL"
+      ],
+      "ConstraintDescription": "Must be a valid Traffic Type"
+    },
+    "FilterPattern": {
+      "Description": "Filter Pattern for Kinesis CloudWatch Subscription",
+      "Type": "String",
+      "MinLength": 0,
+      "MaxLength": 256,
+      "Default": "[version, account_id, interface_id, srcaddr != \"-\", dstaddr != \"-\", srcport != \"-\", dstport != \"-\", protocol, packets, bytes, start, end, action, log_status]"
+    },
+    "EnableKinesis": {
+      "Description": "Stream Logs to Kinesis?",
+      "Type": "String",
+      "Default": "yes",
+      "AllowedValues": [
+        "yes",
+        "no"
+      ]
+    },
+    "KinesisShardCount": {
+      "Description": "Number of Initial Shards for KinesisStream",
+      "Type": "Number",
+      "Default": 1,
+      "MinValue": 1,
+      "MaxValue": 16
+    }
+  },
+  "Conditions": {
+    "IsKinesisEnabled": {
+      "Fn::Equals": [
+        {
+          "Ref": "EnableKinesis"
+        },
+        "yes"
+      ]
+    }
+  },
+  "Resources": {
+    "SubscriptionFilter": {
+      "Condition": "IsKinesisEnabled",
+      "Type": "AWS::Logs::SubscriptionFilter",
+      "Properties": {
+        "RoleArn": {
+          "Fn::GetAtt": [
+            "KinesisRole",
+            "Arn"
+          ]
+        },
+        "LogGroupName": {
+          "Ref": "LogGroup"
+        },
+        "FilterPattern": {
+          "Ref": "FilterPattern"
+        },
+        "DestinationArn": {
+          "Fn::Join": [
+            ":",
+            [
+              "arn",
+              "aws",
+              "kinesis",
+              {
+                "Ref": "AWS::Region"
+              },
+              {
+                "Ref": "AWS::AccountId"
+              },
+              {
+                "Fn::Join": [
+                  "/",
+                  [
+                    "stream",
+                    {
+                      "Ref": "KinesisStream"
+                    }
+                  ]
+                ]
+              }
+            ]
+          ]
+        }
+      }
+    },
+    "KinesisRole": {
+      "Condition": "IsKinesisEnabled",
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  {
+                    "Fn::Join": [
+                      ".",
+                      [
+                        "logs",
+                        {
+                          "Ref": "AWS::Region"
+                        },
+                        "amazonaws",
+                        "com"
+                      ]
+                    ]
+                  }
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Path": "/",
+        "Policies": [
+          {
+            "PolicyName": "cloudwatch-log-stream",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "kinesis:Put*"
+                  ],
+                  "Resource": {
+                    "Fn::Join": [
+                      ":",
+                      [
+                        "arn",
+                        "aws",
+                        "kinesis",
+                        {
+                          "Ref": "AWS::Region"
+                        },
+                        {
+                          "Ref": "AWS::AccountId"
+                        },
+                        {
+                          "Fn::Join": [
+                            "/",
+                            [
+                              "stream",
+                              {
+                                "Ref": "KinesisStream"
+                              }
+                            ]
+                          ]
+                        }
+                      ]
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "KinesisStream": {
+      "Condition": "IsKinesisEnabled",
+      "Type": "AWS::Kinesis::Stream",
+      "Properties": {
+        "ShardCount": {
+          "Ref": "KinesisShardCount"
+        }
+      }
+    },
+    "FlowLogs": {
+      "Type": "Custom::FlowLogs",
+      "Properties": {
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "FlowLogsFunc",
+            "Arn"
+          ]
+        },
+        "ResourceIds": {
+          "Ref": "ResourceIds"
+        },
+        "ResourceType": {
+          "Ref": "ResourceType"
+        },
+        "DeliverLogsPermissionArn": {
+          "Fn::GetAtt": [
+            "Role",
+            "Arn"
+          ]
+        },
+        "LogGroupName": {
+          "Ref": "LogGroup"
+        },
+        "TrafficType": {
+          "Ref": "TrafficType"
+        },
+        "StackId": {
+          "Ref": "AWS::StackId"
+        }
+      }
+    },
+    "LogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "RetentionInDays": 30
+      }
+    },
+    "Policy": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyName": "flow-logs-cloudwatch-create",
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:DescribeLogGroups",
+                "logs:DescribeLogStreams",
+                "logs:PutLogEvents"
+              ],
+              "Resource": [
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:logs:",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      ":",
+                      {
+                        "Ref": "AWS::AccountId"
+                      },
+                      ":log-group:",
+                      {
+                        "Ref": "LogGroup"
+                      },
+                      ":log-stream:*"
+                    ]
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "Roles": [
+          {
+            "Ref": "Role"
+          }
+        ]
+      }
+    },
+    "Role": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "vpc-flow-logs.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Path": "/"
+      }
+    },
+    "FlowLogsFunc": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Timeout": 30,
+        "Handler": "index.handler",
+        "Description": "Turns on FlowLogs for the given resource IDs",
+        "Role": {
+          "Fn::GetAtt": [
+            "FlowLogsExecutionRole",
+            "Arn"
+          ]
+        },
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ResourceBucketName"
+          },
+          "S3Key": {
+            "Fn::Join": [
+              "",
+              [
+                {
+                  "Ref": "ServiceName"
+                },
+                ".zip"
+              ]
+            ]
+          }
+        },
+        "Runtime": "nodejs"
+      }
+    },
+    "FlowLogsExecutionRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "lambda.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Path": "/",
+        "Policies": [
+          {
+            "PolicyName": "flow-logs-create",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:*"
+                  ],
+                  "Resource": "arn:aws:logs:*:*:*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "cloudformation:DescribeStacks"
+                  ],
+                  "Resource": "*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "ec2:DescribeFlowLogs",
+                    "ec2:CreateFlowLogs",
+                    "ec2:DeleteFlowLogs"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  "Outputs": {
+    "LogGroup": {
+      "Value": {
+        "Ref": "LogGroup"
+      },
+      "Description": "CloudWatch LogGroup where Flow Logs are sent"
+    },
+    "LogStreamArn": {
+      "Condition": "IsKinesisEnabled",
+      "Value": {
+        "Fn::GetAtt": [
+          "KinesisStream",
+          "Arn"
+        ]
+      },
+      "Description": "Kinesis Log Stream Arn"
+    }
+  }
+}
