@@ -1,0 +1,46 @@
+[
+  {
+    "ParameterKey": "ServiceName",
+    "ParameterValue": "ECS"
+  },
+  {
+    "ParameterKey": "Environment",
+    "ParameterValue": "dev"
+  },
+  {
+    "ParameterKey": "VPCStackName",
+    "ParameterValue": "VPC-dev"
+  },
+  {
+    "ParameterKey": "ClusterName",
+    "ParameterValue": "ClusterA"
+  },
+  {
+    "ParameterKey": "KeyName",
+    "ParameterValue": "zollie"
+  },
+  {
+    "ParameterKey": "InstanceType",
+    "ParameterValue": "m3.medium"
+  },
+  {
+    "ParameterKey": "DesiredCapacity",
+    "ParameterValue": "1"
+  },
+  {
+    "ParameterKey": "MaxSize",
+    "ParameterValue": "3"
+  },
+  {
+    "ParameterKey": "DataVolumeSnapshotId",
+    "ParameterValue": ""
+  },
+  {
+    "ParameterKey": "DataVolumeSize",
+    "ParameterValue": "10"
+  },
+  {
+    "ParameterKey": "DataVolumeType",
+    "ParameterValue": "standard"
+  }
+]

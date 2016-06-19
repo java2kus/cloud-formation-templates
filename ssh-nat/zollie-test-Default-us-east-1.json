@@ -1,0 +1,42 @@
+[
+  {
+    "ParameterKey": "ServiceName",
+    "ParameterValue": "SSH"
+  },
+  {
+    "ParameterKey": "AccountName",
+    "ParameterValue": "test"
+  },
+  {
+    "ParameterKey": "Environment",
+    "ParameterValue": "Default"
+  },
+  {
+    "ParameterKey": "ResourceBucketName",
+    "ParameterValue": "zollie-cfn-resources-us-east-1-test"
+  },
+  {
+    "ParameterKey": "RootDomain",
+    "ParameterValue": "zollie.rocks"
+  },
+  {
+    "ParameterKey": "VPCStackName",
+    "ParameterValue": "VPC-Default"
+  },
+  {
+    "ParameterKey": "KeyName",
+    "ParameterValue": "zollie"
+  },
+  {
+    "ParameterKey": "InstanceType",
+    "ParameterValue": "m1.medium"
+  },
+  {
+    "ParameterKey": "Hostname",
+    "ParameterValue": "ssh"
+  },
+  {
+    "ParameterKey": "PublicRegionZone",
+    "ParameterValue": "ZADK6SEHACJGA"
+  }
+]

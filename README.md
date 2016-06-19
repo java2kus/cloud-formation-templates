@@ -5,6 +5,7 @@ CloudFormation is a great way to to automate AWS infrastructure and service setu
 The templates follow CloudFromation [best practices](http://www.slideshare.net/AmazonWebServices/app304-aws-cloudformation-best-practices-aws-reinvent-2014).
 
 **Note**
+
 In some cases, one stack may depend on another. For example, you need to setup a VPC before launching an SSH/NAT instance.
 
 
