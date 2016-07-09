@@ -1,0 +1,54 @@
+[
+  {
+    "ParameterKey": "ServiceName",
+    "ParameterValue": "Jenkins"
+  },
+  {
+    "ParameterKey": "Environment",
+    "ParameterValue": "Default"
+  },
+  {
+    "ParameterKey": "AccountName",
+    "ParameterValue": "test"
+  },
+  {
+    "ParameterKey": "ECSStackName",
+    "ParameterValue": "ECS-Default-ClusterA"
+  },
+  {
+    "ParameterKey": "RepositoryName",
+    "ParameterValue": "zollie/jenkins"
+  },
+  {
+    "ParameterKey": "ImageVersion",
+    "ParameterValue": "latest"
+  },
+  {
+    "ParameterKey": "DesiredCount",
+    "ParameterValue": "1"
+  },
+  {
+    "ParameterKey": "Cpu",
+    "ParameterValue": "512"
+  },
+  {
+    "ParameterKey": "Memory",
+    "ParameterValue": "2048"
+  },
+  {
+    "ParameterKey": "ResourceBucketName",
+    "ParameterValue": "zollie-cfn-resources-us-east-1-test"
+  },
+  {
+    "ParameterKey": "DataLakeBucketName",
+    "ParameterValue": "zollie-data-lake-us-east-1-test"
+  },
+  {
+    "ParameterKey": "RootDomain",
+    "ParameterValue": "zollie.rocks"
+  },
+  {
+    "ParameterKey": "PublicRegionZone",
+    "ParameterValue": "ZADK6SEHACJGA"
+  }
+]

@@ -1,0 +1,7 @@
+[default]
+output = json
+region = us-east-1
+profile = zollie
+env = Default
+name = Test
+account_id = 084133473015

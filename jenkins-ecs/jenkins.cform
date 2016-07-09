@@ -1,0 +1,622 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Jenkins Master CI Server",
+  "Parameters": {
+    "ServiceName": {
+      "Description": "Becomes the short hostname used in DNS, Naming, Comments, and other things.",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255,
+      "AllowedPattern": "^[a-zA-Z][-a-zA-Z0-9]*$",
+      "Default": "Jenkins"
+    },
+    "Environment": {
+      "Description": "The Runtime Environment",
+      "Type": "String",
+      "Default": "Default",
+      "AllowedValues": [
+        "Default",
+        "LoadTest"
+      ]
+    },
+    "AccountName": {
+      "Description": "Name for the current AWS Account",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255,
+      "AllowedPattern": "^[a-zA-Z][-a-zA-Z0-9]*$"
+    },
+    "PublicRegionZone": {
+      "Description": "The Region Hosted Zone Id`",
+      "Type": "AWS::Route53::HostedZone::Id"
+    },
+    "ECSStackName": {
+      "Description": "Name of an active CloudFormation stack that contains the ECS Cluster resources that will be used in this stack.",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255,
+      "AllowedPattern": "^[a-zA-Z][-a-zA-Z0-9]*$"
+    },
+    "RepositoryName": {
+      "Description": "Becomes the short hostname used in DNS, Naming, Comments, and other things.",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255,
+      "AllowedPattern": "^[a-z][-a-z0-9/]*$"
+    },
+    "ImageVersion": {
+      "Description": "Version of the Image to run",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255,
+      "AllowedPattern": "^latest|[-0-9]*$",
+      "Default": "latest"
+    },
+    "DesiredCount": {
+      "Description": "Desired Number of Service Containers",
+      "Type": "Number",
+      "MinValue": 0,
+      "MaxValue": 5,
+      "Default": 1
+    },
+    "Cpu": {
+      "Description": "Cpu Units for Container",
+      "Type": "Number",
+      "MinValue": 0,
+      "MaxValue": 2048,
+      "Default": 512
+    },
+    "Memory": {
+      "Description": "Memory Units for Container in MiBs",
+      "Type": "Number",
+      "MinValue": 5,
+      "MaxValue": 76294,
+      "Default": 1024
+    },
+    "ResourceBucketName": {
+      "Description": "CloudFormation Resources S3 Bucket Name",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255,
+      "AllowedPattern": "^[a-z][-a-z0-9]*$"
+    },
+    "RootDomain": {
+      "Description": "Root DNS Domain Name",
+      "Type": "String"
+    },
+    "DataLakeBucketName": {
+      "Description": "DataLake S3 Bucket Name",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255,
+      "AllowedPattern": "^[a-z][-a-z0-9]*$",
+      "Default": "data-lake"
+    }
+  },
+  "Mappings": {},
+  "Conditions": {
+    "IsDefault": {
+      "Fn::Equals": [
+        {
+          "Ref": "Environment"
+        },
+        "Default"
+      ]
+    }
+  },
+  "Resources": {
+    "PublicDNS": {
+      "Type": "AWS::Route53::RecordSet",
+      "Properties": {
+        "HostedZoneId": {
+          "Ref": "PublicRegionZone"
+        },
+        "Comment": {
+          "Fn::Join": [
+            "-",
+            [
+              {
+                "Ref": "ServiceName"
+              },
+              "ELB"
+            ]
+          ]
+        },
+        "Name": {
+          "Fn::If": [
+            "IsDefault",
+            {
+              "Fn::Join": [
+                ".",
+                [
+                  {
+                    "Ref": "ServiceName"
+                  },
+                  {
+                    "Ref": "AccountName"
+                  },
+                  {
+                    "Ref": "AWS::Region"
+                  },
+                  {
+                    "Ref": "RootDomain"
+                  }
+                ]
+              ]
+            },
+            {
+              "Fn::Join": [
+                ".",
+                [
+                  {
+                    "Ref": "ServiceName"
+                  },
+                  {
+                    "Ref": "Environment"
+                  },
+                  {
+                    "Ref": "AccountName"
+                  },
+                  {
+                    "Ref": "AWS::Region"
+                  },
+                  {
+                    "Ref": "RootDomain"
+                  }
+                ]
+              ]
+            }
+          ]
+        },
+        "Type": "A",
+        "AliasTarget": {
+          "DNSName": {
+            "Fn::GetAtt": [
+              "ELB",
+              "DNSName"
+            ]
+          },
+          "HostedZoneId": {
+            "Fn::GetAtt": [
+              "ELB",
+              "CanonicalHostedZoneNameID"
+            ]
+          },
+          "EvaluateTargetHealth": true
+        }
+      }
+    },
+    "PrivateDNS": {
+      "Type": "AWS::Route53::RecordSet",
+      "Properties": {
+        "HostedZoneId": {
+          "Fn::GetAtt": [
+            "ECSInfo",
+            "PrivateHostedZone"
+          ]
+        },
+        "Comment": {
+          "Fn::Join": [
+            "-",
+            [
+              {
+                "Ref": "ServiceName"
+              },
+              "ELB"
+            ]
+          ]
+        },
+        "Name": {
+          "Fn::Join": [
+            ".",
+            [
+              {
+                "Ref": "ServiceName"
+              },
+              {
+                "Ref": "RootDomain"
+              }
+            ]
+          ]
+        },
+        "Type": "A",
+        "AliasTarget": {
+          "DNSName": {
+            "Fn::GetAtt": [
+              "ELB",
+              "DNSName"
+            ]
+          },
+          "HostedZoneId": {
+            "Fn::GetAtt": [
+              "ELB",
+              "CanonicalHostedZoneNameID"
+            ]
+          },
+          "EvaluateTargetHealth": true
+        }
+      }
+    },
+    "ECSInstanceELBIngress": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "FromPort": 8080,
+        "ToPort": 8080,
+        "IpProtocol": "tcp",
+        "GroupId": {
+          "Fn::GetAtt": [
+            "ECSInfo",
+            "InstanceSecurityGroupId"
+          ]
+        },
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "ELBSecurityGroup",
+            "GroupId"
+          ]
+        }
+      }
+    },
+    "ELB": {
+      "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+      "Properties": {
+        "Subnets": [
+          {
+            "Fn::GetAtt": [
+              "ECSInfo",
+              "PublicSubnet0"
+            ]
+          },
+          {
+            "Fn::GetAtt": [
+              "ECSInfo",
+              "PublicSubnet1"
+            ]
+          }
+        ],
+        "Listeners": [
+          {
+            "LoadBalancerPort": "80",
+            "InstancePort": "8080",
+            "Protocol": "HTTP"
+          }
+        ],
+        "HealthCheck": {
+          "Target": "HTTP:8080/",
+          "HealthyThreshold": "2",
+          "UnhealthyThreshold": "10",
+          "Interval": "30",
+          "Timeout": "5"
+        },
+        "SecurityGroups": [
+          {
+            "Ref": "ELBSecurityGroup"
+          }
+        ],
+        "AccessLoggingPolicy": {
+          "S3BucketName": {
+            "Ref": "DataLakeBucketName"
+          },
+          "S3BucketPrefix": {
+            "Fn::Join": [
+              "/",
+              [
+                "ELB",
+                {
+                  "Ref": "ServiceName"
+                }
+              ]
+            ]
+          },
+          "Enabled": "true",
+          "EmitInterval": "5"
+        }
+      }
+    },
+    "ELBSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "VpcId": {
+          "Fn::GetAtt": [
+            "ECSInfo",
+            "VPCId"
+          ]
+        },
+        "GroupDescription": {
+          "Fn::Join": [
+            "-",
+            [
+              {
+                "Ref": "ServiceName"
+              },
+              "ELB"
+            ]
+          ]
+        },
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "80",
+            "ToPort": "80",
+            "CidrIp": "0.0.0.0/0"
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "-",
+                [
+                  {
+                    "Ref": "ServiceName"
+                  },
+                  "ELB"
+                ]
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "Service": {
+      "Type": "AWS::ECS::Service",
+      "Properties": {
+        "Cluster": {
+          "Fn::GetAtt": [
+            "ECSInfo",
+            "Cluster"
+          ]
+        },
+        "DesiredCount": {
+          "Ref": "DesiredCount"
+        },
+        "TaskDefinition": {
+          "Ref": "TaskDef"
+        },
+        "Role": {
+          "Ref": "ServiceRole"
+        },
+        "LoadBalancers": [
+          {
+            "ContainerName": "Jenkins",
+            "ContainerPort": "8080",
+            "LoadBalancerName": {
+              "Ref": "ELB"
+            }
+          }
+        ]
+      }
+    },
+    "TaskDef": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "ContainerDefinitions": [
+          {
+            "Name": "Jenkins",
+            "Image": {
+              "Fn::Join": [
+                "",
+                [
+                  {
+                    "Ref": "AWS::AccountId"
+                  },
+                  ".dkr.ecr.",
+                  "us-east-1",
+                  ".amazonaws.com",
+                  "/",
+                  {
+                    "Ref": "RepositoryName"
+                  },
+                  ":",
+                  {
+                    "Ref": "ImageVersion"
+                  }
+                ]
+              ]
+            },
+            "Cpu": {
+              "Ref": "Cpu"
+            },
+            "Memory": {
+              "Ref": "Memory"
+            },
+            "PortMappings": [
+              {
+                "ContainerPort": 8080,
+                "HostPort": 8080
+              },
+              {
+                "ContainerPort": 50000,
+                "HostPort": 50000
+              }
+            ],
+            "MountPoints": [
+              {
+                "SourceVolume": "jenkins_home",
+                "ContainerPath": "/var/jenkins_home"
+              }
+            ],
+            "Essential": true
+          }
+        ],
+        "Volumes": [
+          {
+            "Host": {
+              "SourcePath": "/volf/jenkins_home"
+            },
+            "Name": "jenkins_home"
+          }
+        ]
+      }
+    },
+    "ServiceRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "ecs.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Path": "/",
+        "Policies": [
+          {
+            "PolicyName": "ecs-service",
+            "PolicyDocument": {
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "elasticloadbalancing:Describe*",
+                    "elasticloadbalancing:DeregisterInstancesFromLoadBalancer",
+                    "elasticloadbalancing:RegisterInstancesWithLoadBalancer",
+                    "ec2:Describe*",
+                    "ec2:AuthorizeSecurityGroupIngress"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "ECSInfo": {
+      "Type": "Custom::VPCInfo",
+      "Properties": {
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "LookupStackOutputs",
+            "Arn"
+          ]
+        },
+        "StackName": {
+          "Ref": "ECSStackName"
+        }
+      }
+    },
+    "LookupStackOutputs": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Handler": "index.handler",
+        "Description": "Lookup CloudFormation Stack Outputs",
+        "Role": {
+          "Fn::GetAtt": [
+            "LambdaExecutionRole",
+            "Arn"
+          ]
+        },
+        "Code": {
+          "ZipFile": {
+            "Fn::Join": [
+              "\n",
+              [
+                "var response = require('cfn-response');",
+                "exports.handler = function(event, context) {",
+                "    console.log('REQUEST RECEIVED:\\n', JSON.stringify(event));",
+                "    if (event.RequestType == 'Delete') {",
+                "        response.send(event, context, response.SUCCESS);",
+                "        return;",
+                "    }",
+                "    var stackName = event.ResourceProperties.StackName;",
+                "    var responseData = {};",
+                "    if (stackName) {",
+                "        var aws = require('aws-sdk');",
+                "        var cfn = new aws.CloudFormation();",
+                "        cfn.describeStacks({StackName: stackName}, function(err, data) {",
+                "            if (err) {",
+                "                responseData = {Error: 'DescribeStacks call failed'};",
+                "                console.log(responseData.Error + ':\\n', err);",
+                "                response.send(event, context, response.FAILED, responseData);",
+                "            }",
+                "            else {",
+                "                data.Stacks[0].Outputs.forEach(function(output) {",
+                "                    responseData[output.OutputKey] = output.OutputValue;",
+                "                });",
+                "                response.send(event, context, response.SUCCESS, responseData);",
+                "            }",
+                "        });",
+                "    } else {",
+                "        responseData = {Error: 'Stack name not specified'};",
+                "        console.log(responseData.Error);",
+                "        response.send(event, context, response.FAILED, responseData);",
+                "    }",
+                "};"
+              ]
+            ]
+          }
+        },
+        "Runtime": "nodejs",
+        "Timeout": "30"
+      }
+    },
+    "LambdaExecutionRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "lambda.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Path": "/",
+        "Policies": [
+          {
+            "PolicyName": "cfn-stack-lookup",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:*"
+                  ],
+                  "Resource": "arn:aws:logs:*:*:*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "cloudformation:DescribeStacks"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  "Outputs": {
+    "Service": {
+      "Value": {
+        "Ref": "Service"
+      }
+    },
+    "TaskDef": {
+      "Value": {
+        "Ref": "TaskDef"
+      }
+    }
+  }
+}
