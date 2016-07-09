@@ -1,0 +1,38 @@
+{
+    "Records": [
+        {
+            "eventVersion": "2.0",
+            "eventSource": "aws:s3",
+            "awsRegion": "us-east-1",
+            "eventTime": "2016-01-17T16:44:45.144Z",
+            "eventName": "ObjectCreated:CompleteMultipartUpload",
+            "userIdentity": {
+                "principalId": "AWS:AIDAITAATZTOMD5FZTPKC"
+            },
+            "requestParameters": {
+                "sourceIPAddress": "52.71.54.250"
+            },
+            "responseElements": {
+                "x-amz-request-id": "7182AB107CA7F4B2",
+                "x-amz-id-2": "Z/7taYtE/NrVu735twvtc99wslB/nk8EOnHc7jbEinJMF7Z5GP7NvFLU9K7QGQBcuJ+xn7cRcIY="
+            },
+            "s3": {
+                "s3SchemaVersion": "1.0",
+                "configurationId": "cb200612-0742-4872-9268-97725a982fa7",
+                "bucket": {
+                    "name": "nyld-access-logs-csw",
+                    "ownerIdentity": {
+                        "principalId": "A2NSXQUJA5OR41"
+                    },
+                    "arn": "arn:aws:s3:::nyld-access-logs-csw"
+                },
+                "object": {
+                    "key": "Logs/AWSLogs/383166358680/elasticloadbalancing/us-east-1/2016/01/17/383166358680_elasticloadbalancing_us-east-1_CSW-ELBWebFrontEnd-H2W0OG8YIEW5_20160117T1635Z_54.210.38.109_15qlq5ly.log",
+                    "size": 39099,
+                    "eTag": "d64bb7f160b47faac2e289ddb9c689aa-1",
+                    "sequencer": "00569BC4FCE9296D43"
+                }
+            }
+        }
+    ]
+}

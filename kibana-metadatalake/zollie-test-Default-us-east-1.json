@@ -1,0 +1,26 @@
+[
+  {
+    "ParameterKey": "ServiceName",
+    "ParameterValue": "Kibana-MetaDataLake"
+  },
+  {
+    "ParameterKey": "Endpoint",
+    "ParameterValue": "search-es-domain-a-7zhh6ciwgiym5u7dpmzkurtjhy.us-east-1.es.amazonaws.com"
+  },
+  {
+    "ParameterKey": "DomainName",
+    "ParameterValue": "es-domain-a"
+  },
+  {
+    "ParameterKey": "MetaDataTableName",
+    "ParameterValue": "MetaDataLake"
+  },
+  {
+    "ParameterKey": "MetaDataStreamArn",
+    "ParameterValue": "arn:aws:dynamodb:us-east-1:084133473015:table/MetaDataLake/stream/2016-06-02T14:59:57.761"
+  },
+  {
+    "ParameterKey": "ResourceBucketName",
+    "ParameterValue": "zollie-cfn-resources-us-east-1-test"
+  }
+]

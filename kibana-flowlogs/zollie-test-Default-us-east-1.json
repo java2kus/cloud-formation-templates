@@ -1,0 +1,27 @@
+[
+  {
+    "ParameterKey": "ServiceName",
+    "ParameterValue": "Kibana-FlowLogs"
+  },
+  {
+    "ParameterKey": "Endpoint",
+    "ParameterValue": "search-es-domain-a-7zhh6ciwgiym5u7dpmzkurtjhy.us-east-1.es.amazonaws.com"
+  },
+  {
+    "ParameterKey": "DomainArn",
+    "ParameterValue": "arn:aws:es:us-east-1:084133473015:domain/es-domain-a"
+  },
+  {
+    "ParameterKey": "FlowLogsStreamName",
+    "ParameterValue": "FlowLogs-vpc-6bfc530c-KinesisStream-SVU2KT2GA64A"
+  },
+
+  {
+    "ParameterKey": "ResourceBucketName",
+    "ParameterValue": "zollie-cfn-resources-us-east-1-test"
+  },
+  {
+    "ParameterKey": "DataLakeBucketName",
+    "ParameterValue": "zollie-data-lake-us-east-1-test"
+  }
+]

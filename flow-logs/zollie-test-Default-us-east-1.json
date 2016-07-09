@@ -1,0 +1,34 @@
+[
+  {
+    "ParameterKey": "ServiceName",
+    "ParameterValue": "FlowLogs"
+  },
+  {
+    "ParameterKey": "ResourceBucketName",
+    "ParameterValue": "zollie-cfn-resources-us-east-1-test"
+  },
+  {
+    "ParameterKey": "ResourceIds",
+    "ParameterValue": "vpc-6bfc530c"
+  },
+  {
+    "ParameterKey": "ResourceType",
+    "ParameterValue": "VPC"
+  },
+  {
+    "ParameterKey": "TrafficType",
+    "ParameterValue": "ALL"
+  },
+  {
+    "ParameterKey": "FilterPattern",
+    "ParameterValue": "[version, account_id, interface_id, srcaddr != \"-\", dstaddr != \"-\", srcport != \"-\", dstport != \"-\", protocol, packets, bytes, start, end, action, log_status]"
+  },
+  {
+    "ParameterKey": "EnableKinesis",
+    "ParameterValue": "yes"
+  },
+  {
+    "ParameterKey": "KinesisShardCount",
+    "ParameterValue": "1"
+  }
+]

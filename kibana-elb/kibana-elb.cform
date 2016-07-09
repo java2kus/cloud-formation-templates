@@ -1,0 +1,358 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Streams ELB Access Logs to Elasticsearch",
+  "Parameters": {
+    "ServiceName": {
+      "Description": "Becomes the short hostname used in DNS, Naming, Comments, and other things.",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255,
+      "AllowedPattern": "^[a-zA-Z][-a-zA-Z0-9]*$",
+      "Default": "Kibana-ELB"
+    },
+    "Endpoint": {
+      "Description": "Elasticsearch Endpoint",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255
+    },
+    "DomainName": {
+      "Description": "Elasticsearch Domain Arn",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255,
+      "Default": "demo-domain"
+    },
+    "MetaDataStreamArn": {
+      "Description": "MetaDataLake Kinesis Stream Arn",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255
+    },
+    "ResourceBucketName": {
+      "Description": "CloudFormation Resources S3 Bucket Name",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255,
+      "AllowedPattern": "^[a-z][-a-z0-9]*$"
+    },
+    "DataLakeBucketName": {
+      "Description": "DataLake S3 Bucket Name",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255,
+      "AllowedPattern": "^[a-z][-a-z0-9]*$",
+      "Default": "data-lake"
+    }
+  },
+  "Mappings": {},
+  "Resources": {
+    "EventSourceMapping": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "EventSourceArn": {
+          "Ref": "MetaDataStreamArn"
+        },
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "KibanaELBFunc",
+            "Arn"
+          ]
+        },
+        "StartingPosition": "TRIM_HORIZON"
+      }
+    },
+    "KibanaELBFunc": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Description": "Streams ELB Access Logs to Elasticsearch",
+        "Handler": "index.handler",
+        "Timeout": "300",
+        "Role": {
+          "Fn::GetAtt": [
+            "KibanaELBExecutionRole",
+            "Arn"
+          ]
+        },
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ResourceBucketName"
+          },
+          "S3Key": {
+            "Fn::Join": [
+              "",
+              [
+                {
+                  "Ref": "ServiceName"
+                },
+                "-kibana-elb.zip"
+              ]
+            ]
+          }
+        },
+        "Runtime": "nodejs"
+      }
+    },
+    "KibanaELBS3InvokePermission": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "KibanaELBFunc",
+            "Arn"
+          ]
+        },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "s3.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:aws:s3:::",
+              {
+                "Ref": "DataLakeBucketName"
+              }
+            ]
+          ]
+        },
+        "SourceAccount": {
+          "Ref": "AWS::AccountId"
+        }
+      }
+    },
+    "KibanaELBExecutionRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "lambda.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Path": "/",
+        "Policies": [
+          {
+            "PolicyName": "kibana-elb-stream",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:*"
+                  ],
+                  "Resource": "arn:aws:logs:*:*:*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator",
+                    "dynamodb:DescribeStream",
+                    "dynamodb:ListStreams"
+                  ],
+                  "Resource": {
+                    "Ref": "MetaDataStreamArn"
+                  }
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "es:ESHttpHead",
+                    "es:ESHttpGet",
+                    "es:ESHttpPut",
+                    "es:ESHttpPost"
+                  ],
+                  "Resource": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:aws:es:",
+                        {
+                          "Ref": "AWS::Region"
+                        },
+                        ":",
+                        {
+                          "Ref": "AWS::AccountId"
+                        },
+                        ":",
+                        "domain/",
+                        {
+                          "Ref": "DomainName"
+                        },
+                        "/*"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:GetObject"
+                  ],
+                  "Resource": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:aws:s3:::",
+                        {
+                          "Ref": "DataLakeBucketName"
+                        },
+                        "/ELB",
+                        "/*",
+                        "/AWSLogs/",
+                        {
+                          "Ref": "AWS::AccountId"
+                        },
+                        "/*"
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:ListBucket",
+                    "s3:GetBucketTagging"
+                  ],
+                  "Resource": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:aws:s3:::",
+                        {
+                          "Ref": "DataLakeBucketName"
+                        }
+                      ]
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "ELBMapping": {
+      "Type": "Custom::ELBMapping",
+      "Properties": {
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "ELBMappingFunc",
+            "Arn"
+          ]
+        },
+        "DomainEndpoint": {
+          "Ref": "Endpoint"
+        }
+      }
+    },
+    "ELBMappingFunc": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Timeout": 30,
+        "Handler": "index.handler",
+        "Description": "Sets up Elasticsearch Mapping Template",
+        "Role": {
+          "Fn::GetAtt": [
+            "ELBMappingFuncRole",
+            "Arn"
+          ]
+        },
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ResourceBucketName"
+          },
+          "S3Key": {
+            "Fn::Join": [
+              "",
+              [
+                {
+                  "Ref": "ServiceName"
+                },
+                "-es-mapping.zip"
+              ]
+            ]
+          }
+        },
+        "Runtime": "nodejs"
+      }
+    },
+    "ELBMappingFuncRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "lambda.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Path": "/",
+        "Policies": [
+          {
+            "PolicyName": "cfn-elasticsearch-mapping-template",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:*"
+                  ],
+                  "Resource": "arn:aws:logs:*:*:*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "es:ESHttpPut"
+                  ],
+                  "Resource": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:aws:es:",
+                        {
+                          "Ref": "AWS::Region"
+                        },
+                        ":",
+                        {
+                          "Ref": "AWS::AccountId"
+                        },
+                        ":",
+                        "domain/",
+                        {
+                          "Ref": "DomainName"
+                        },
+                        "/*"
+                      ]
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,22 @@
+[
+  {
+    "ParameterKey": "ServiceName",
+    "ParameterValue": "Kibana-CloudTrail"
+  },
+  {
+    "ParameterKey": "Endpoint",
+    "ParameterValue": "search-es-domain-a-7zhh6ciwgiym5u7dpmzkurtjhy.us-east-1.es.amazonaws.com"
+  },
+  {
+    "ParameterKey": "DomainArn",
+    "ParameterValue": "arn:aws:es:us-east-1:084133473015:domain/es-domain-a"
+  },
+  {
+    "ParameterKey": "CloudTrailStreamName",
+    "ParameterValue": "CloudTrail-KinesisStream-1GOFC7JY7BZZA"
+  },
+  {
+    "ParameterKey": "ResourceBucketName",
+    "ParameterValue": "zollie-cfn-resources-us-east-1-test"
+  }
+]

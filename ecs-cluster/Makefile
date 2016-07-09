@@ -71,7 +71,7 @@ upload-template:
 create: package upload
 	@aws cloudformation create-stack --stack-name=$(STACK_NAME) \
 		--template-body=file://$(cform) --capabilities=CAPABILITY_IAM \
-		--parameters=file://$(mnemonic)-$(ACCOUNT)-$(ENV)-$(region).json --disable-rollback \
+		--parameters=file://$(mnemonic)-$(ACCOUNT)-$(ENV)-$(region).json \
 
 update: package upload
 	@aws cloudformation update-stack --stack-name=$(STACK_NAME) \

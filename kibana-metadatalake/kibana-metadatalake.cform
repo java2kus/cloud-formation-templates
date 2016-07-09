@@ -1,0 +1,291 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Streams DataLake MetaData to Elasticsearch",
+  "Parameters": {
+    "ServiceName": {
+      "Description": "Becomes the short hostname used in DNS, Naming, Comments, and other things.",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255,
+      "AllowedPattern": "^[a-zA-Z][-a-zA-Z0-9]*$",
+      "Default": "Kibana-MetaDataLake"
+    },
+    "Endpoint": {
+      "Description": "Elasticsearch Endpoint",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255
+    },
+    "DomainName": {
+      "Description": "Elasticsearch Domain Name",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255
+    },
+    "MetaDataTableName": {
+      "Description": "DataLake MetaData Table Name",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255,
+      "AllowedPattern": "^[a-zA-Z][-a-zA-Z0-9]*$"
+    },
+    "MetaDataStreamArn": {
+      "Description": "DataLake MetaData Table Kinesis Stream Arn",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255
+    },
+    "ResourceBucketName": {
+      "Description": "CloudFormation Resources S3 Bucket Name",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255,
+      "AllowedPattern": "^[a-z][-a-z0-9]*$"
+    }
+  },
+  "Mappings": {},
+  "Resources": {
+    "ElasticsearchMapping": {
+      "Type": "Custom::ElasticsearchMapping",
+      "Properties": {
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "ElasticsearchMappingFunc",
+            "Arn"
+          ]
+        },
+        "DomainEndpoint": {
+          "Ref": "Endpoint"
+        },
+        "MetaDataTableName": {
+          "Ref": "MetaDataTableName"
+        }
+      }
+    },
+    "ElasticsearchMappingFunc": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Timeout": "30",
+        "Handler": "index.handler",
+        "Description": "Sets up Elasticsearch Mapping Template",
+        "Role": {
+          "Fn::GetAtt": [
+            "ElasticsearchMappingFuncRole",
+            "Arn"
+          ]
+        },
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ResourceBucketName"
+          },
+          "S3Key": {
+            "Fn::Join": [
+              "",
+              [
+                {
+                  "Ref": "ServiceName"
+                },
+                "-es-mapping.zip"
+              ]
+            ]
+          }
+        },
+        "Runtime": "nodejs"
+      }
+    },
+    "ElasticsearchMappingFuncRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "lambda.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Path": "/",
+        "Policies": [
+          {
+            "PolicyName": "cfn-elasticsearch-mapping-template",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:*"
+                  ],
+                  "Resource": "arn:aws:logs:*:*:*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "es:ESHttpPut"
+                  ],
+                  "Resource": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:aws:es:",
+                        {
+                          "Ref": "AWS::Region"
+                        },
+                        ":",
+                        {
+                          "Ref": "AWS::AccountId"
+                        },
+                        ":",
+                        "domain/",
+                        {
+                          "Ref": "DomainName"
+                        },
+                        "/*"
+                      ]
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "EventSourceMapping": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "EventSourceArn": {
+          "Ref": "MetaDataStreamArn"
+        },
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "KibanaMetaDataFunc",
+            "Arn"
+          ]
+        },
+        "StartingPosition": "TRIM_HORIZON"
+      }
+    },
+    "KibanaMetaDataFunc": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Handler": "index.handler",
+        "Description": "Streams DynamoDB Updates Elasticsearch",
+        "Role": {
+          "Fn::GetAtt": [
+            "KibanaMetaDataFuncRole",
+            "Arn"
+          ]
+        },
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ResourceBucketName"
+          },
+          "S3Key": {
+            "Fn::Join": [
+              "",
+              [
+                {
+                  "Ref": "ServiceName"
+                },
+                "-kibana-metadata.zip"
+              ]
+            ]
+          }
+        },
+        "Runtime": "nodejs",
+        "Timeout": "300"
+      }
+    },
+    "KibanaMetaDataFuncRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "lambda.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Path": "/",
+        "Policies": [
+          {
+            "PolicyName": "kibana-metadata-func",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:*"
+                  ],
+                  "Resource": "arn:aws:logs:*:*:*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "dynamodb:GetRecords",
+                    "dynamodb:GetShardIterator",
+                    "dynamodb:DescribeStream",
+                    "dynamodb:ListStreams"
+                  ],
+                  "Resource": {
+                    "Ref": "MetaDataStreamArn"
+                  }
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "es:ESHttpHead",
+                    "es:ESHttpGet",
+                    "es:ESHttpPut",
+                    "es:ESHttpPost"
+                  ],
+                  "Resource": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:aws:es:",
+                        {
+                          "Ref": "AWS::Region"
+                        },
+                        ":",
+                        {
+                          "Ref": "AWS::AccountId"
+                        },
+                        ":",
+                        "domain/",
+                        {
+                          "Ref": "DomainName"
+                        },
+                        "/*"
+                      ]
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  "Outputs": {}
+}

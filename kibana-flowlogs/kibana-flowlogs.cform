@@ -1,0 +1,305 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Streams FlowLogs to Elasticsearch",
+  "Parameters": {
+    "ServiceName": {
+      "Description": "Becomes the short hostname used in DNS, Naming, Comments, and other things.",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255,
+      "AllowedPattern": "^[a-zA-Z][-a-zA-Z0-9]*$",
+      "Default": "Kibana-FlowLogs"
+    },
+    "Endpoint": {
+      "Description": "Elasticsearch Endpoint",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255,
+      "Default": "search-info-tech-yh2n4uc3nqswdcrj7a4im4xd74.us-west-2.es.amazonaws.com"
+    },
+    "DomainArn": {
+      "Description": "Elasticsearch Domain Arn",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255,
+      "Default": "arn:aws:es:us-west-2:383166358680:domain/info-tech"
+    },
+    "FlowLogsStreamName": {
+      "Description": "FlowLogs Kinesis Stream Name",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255,
+      "Default": "FlowLogs-vpc-3b09fc5f-KinesisStream-1A6584OATIK4H"
+    },
+    "ResourceBucketName": {
+      "Description": "CloudFormation Resources S3 Bucket Name",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255,
+      "AllowedPattern": "^[a-z][-a-z0-9]*$"
+    },
+    "DataLakeBucketName": {
+      "Description": "DataLake S3 Bucket Name",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255,
+      "AllowedPattern": "^[a-z][-a-z0-9]*$",
+      "Default": "data-lake"
+    }
+  },
+  "Mappings": {},
+  "Resources": {
+    "ElasticsearchMapping": {
+      "Type": "Custom::ElasticsearchMapping",
+      "Properties": {
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "ElasticsearchMappingFunc",
+            "Arn"
+          ]
+        },
+        "DomainEndpoint": {
+          "Ref": "Endpoint"
+        }
+      }
+    },
+    "ElasticsearchMappingFunc": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Timeout": "30",
+        "Handler": "index.handler",
+        "Description": "Sets up Elasticsearch Mapping Template",
+        "Role": {
+          "Fn::GetAtt": [
+            "ElasticsearchMappingFuncRole",
+            "Arn"
+          ]
+        },
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ResourceBucketName"
+          },
+          "S3Key": {
+            "Fn::Join": [
+              "",
+              [
+                {
+                  "Ref": "ServiceName"
+                },
+                "-es-mapping",
+                ".zip"
+              ]
+            ]
+          }
+        },
+        "Runtime": "nodejs"
+      }
+    },
+    "ElasticsearchMappingFuncRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "lambda.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Path": "/",
+        "Policies": [
+          {
+            "PolicyName": "cfn-elasticsearch-mapping-template",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:*"
+                  ],
+                  "Resource": "arn:aws:logs:*:*:*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "es:ESHttpPut"
+                  ],
+                  "Resource": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        {
+                          "Ref": "DomainArn"
+                        },
+                        "/*"
+                      ]
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "EventSourceMapping": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "EventSourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:aws:kinesis:",
+              {
+                "Ref": "AWS::Region"
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId"
+              },
+              ":stream/",
+              {
+                "Ref": "FlowLogsStreamName"
+              }
+            ]
+          ]
+        },
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "Func",
+            "Arn"
+          ]
+        },
+        "StartingPosition": "TRIM_HORIZON"
+      }
+    },
+    "Func": {
+      "DependsOn": "ElasticsearchMapping",
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Handler": "index.handler",
+        "Description": "Stream FlowLogs to Elasticsearch",
+        "Role": {
+          "Fn::GetAtt": [
+            "FuncRole",
+            "Arn"
+          ]
+        },
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ResourceBucketName"
+          },
+          "S3Key": {
+            "Fn::Join": [
+              "",
+              [
+                {
+                  "Ref": "ServiceName"
+                },
+                ".zip"
+              ]
+            ]
+          }
+        },
+        "Runtime": "nodejs",
+        "Timeout": "300"
+      }
+    },
+    "FuncRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "lambda.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Path": "/",
+        "Policies": [
+          {
+            "PolicyName": "FlowLogsESFunc",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:*"
+                  ],
+                  "Resource": "arn:aws:logs:*:*:*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "kinesis:GetRecords",
+                    "kinesis:GetShardIterator",
+                    "kinesis:DescribeStream",
+                    "kinesis:ListStreams"
+                  ],
+                  "Resource": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:aws:kinesis:",
+                        {
+                          "Ref": "AWS::Region"
+                        },
+                        ":",
+                        {
+                          "Ref": "AWS::AccountId"
+                        },
+                        ":stream/",
+                        {
+                          "Ref": "FlowLogsStreamName"
+                        }
+                      ]
+                    ]
+                  }
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "es:ESHttpHead",
+                    "es:ESHttpGet",
+                    "es:ESHttpPut",
+                    "es:ESHttpPost"
+                  ],
+                  "Resource": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        {
+                          "Ref": "DomainArn"
+                        },
+                        "/*"
+                      ]
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}
