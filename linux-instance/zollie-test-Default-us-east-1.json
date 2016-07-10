@@ -1,0 +1,38 @@
+[
+  {
+    "ParameterKey": "ServiceName",
+    "ParameterValue": "Standalone-Linux"
+  },
+  {
+    "ParameterKey": "Environment",
+    "ParameterValue": "Default"
+  },
+  {
+    "ParameterKey": "VPCStackName",
+    "ParameterValue": "VPC-Default"
+  },
+  {
+    "ParameterKey": "KeyName",
+    "ParameterValue": "zollie"
+  },
+  {
+    "ParameterKey": "DataVolumeSnapshotId",
+    "ParameterValue": ""
+  },
+  {
+    "ParameterKey": "DataVolumeSize",
+    "ParameterValue": "50"
+  },
+  {
+    "ParameterKey": "DataVolumeDeleteOnTermination",
+    "ParameterValue": "true"
+  },
+  {
+    "ParameterKey": "DataVolumeType",
+    "ParameterValue": "standard"
+  },
+  {
+    "ParameterKey": "ResourceBucketName",
+    "ParameterValue": "zollie-cfn-resources-us-east-1-test"
+  }
+]
