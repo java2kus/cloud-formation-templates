@@ -13,9 +13,8 @@
   },
   {
     "ParameterKey": "FlowLogsStreamName",
-    "ParameterValue": "FlowLogs-vpc-6bfc530c-KinesisStream-SVU2KT2GA64A"
+    "ParameterValue": "FlowLogs-vpc-6bfc530c-KinesisStream-UFWILA6TRZZ5"
   },
-
   {
     "ParameterKey": "ResourceBucketName",
     "ParameterValue": "zollie-cfn-resources-us-east-1-test"

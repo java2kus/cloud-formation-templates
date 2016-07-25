@@ -30,3 +30,19 @@ For a complete list of options use
 make list
 ```
 
+You can export Kibana dashboards with 
+
+```
+make kibana-export
+```
+
+This requires [elasticdump](https://www.npmjs.com/package/elasticdump)
+
+You can import saved Kibana dashboards with 
+
+```
+make kibana-import
+```
+
+
+You must copy a saved Kibana export file to the name `kibana-import.json` in the current directory before running this command

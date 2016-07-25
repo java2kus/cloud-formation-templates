@@ -25,6 +25,12 @@ var mapping =
           "type": "string",
           "analyzer": "keyword"
         },
+        "bytes": {
+          "type": "long"
+        },
+        "packets": {
+          "type": "long"
+        },
         "srcaddr": {
           "type": "ip"
         },

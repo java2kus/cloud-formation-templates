@@ -23,7 +23,8 @@ var accessPolicy = {
       Condition: {
         IpAddress: {
           'aws:SourceIp': [
-            '96.59.26.51'
+            '96.59.18.138',
+            '138.108.60.60'
           ]
         }
       }
