@@ -1,4 +1,4 @@
-cform = jenkins.cform
+cform = jenkins-ecs.cform
 # set with something like aws configure set mnemonic zollie
 mnemonic = $(shell aws configure get mnemonic)
 region = $(shell aws configure get region)
