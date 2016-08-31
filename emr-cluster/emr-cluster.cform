@@ -1,0 +1,627 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "EMR Cluster",
+  "Parameters": {
+    "ServiceName": {
+      "Description": "Becomes the short hostname used in DNS, Naming, Comments, and other things.",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255,
+      "AllowedPattern": "^[a-zA-Z][-a-zA-Z0-9]*$"
+    },
+    "Environment": {
+      "Description": "The Runtime Environment",
+      "Type": "String",
+      "Default": "Default",
+      "AllowedValues": [
+        "Default",
+        "LoadTest"
+      ]
+    },
+    "AccountName": {
+      "Description": "Name for the current AWS Account",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255,
+      "AllowedPattern": "^[a-zA-Z][-a-zA-Z0-9]*$"
+    },
+    "KeyName": {
+      "Description": "Name of an existing EC2 KeyPair",
+      "Type": "AWS::EC2::KeyPair::KeyName",
+      "ConstraintDescription": "must be the name of an existing EC2 KeyPair."
+    },
+    "ResourceBucketName": {
+      "Description": "CloudFormation Resources S3 Bucket Name",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255,
+      "AllowedPattern": "^[a-z][-a-z0-9]*$"
+    },
+    "DataLakeBucketName": {
+      "Description": "DataLake S3 Bucket Name",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255,
+      "AllowedPattern": "^[a-z][-a-z0-9]*$"
+    },
+    "VisibleToAllUsers": {
+      "Description": "Is Cluster Visible to All IAM Users in Account",
+      "Type": "String",
+      "Default": "true",
+      "AllowedValues": [
+        "true",
+        "false"
+      ]
+    },
+    "SubnetId": {
+      "Description": "VPC SubnetId for Cluster Launch",
+      "Type": "AWS::EC2::Subnet::Id"
+    },
+    "MasterInstanceCount": {
+      "Description": "Number of Master Instances",
+      "Type": "Number",
+      "Default": "1"
+    },
+    "MasterInstanceType": {
+      "Description": "Amazon EMR Master EC2 instance type",
+      "Type": "String",
+      "Default": "m1.medium",
+      "AllowedValues": [
+        "cc2.8xlarge",
+        "c3.8xlarge",
+        "c3.4xlarge",
+        "c3.2xlarge",
+        "c3.xlarge",
+        "c3.large",
+        "c4.8xlarge",
+        "c4.4xlarge",
+        "c4.2xlarge",
+        "c4.xlarge",
+        "c4.large",
+        "r3.8xlarge",
+        "r3.4xlarge",
+        "r3.2xlarge",
+        "r3.xlarge",
+        "r3.large",
+        "i2.8xlarge",
+        "i2.4xlarge",
+        "i2.2xlarge",
+        "i2.xlarge",
+        "cr1.8xlarge",
+        "cg1.4xlarge",
+        "m1.medium",
+        "m1.large",
+        "m1.xlarge",
+        "m3.medium",
+        "m3.large",
+        "m3.xlarge",
+        "m3.2xlarge",
+        "hi1.4xlarge",
+        "g2.2xlarge",
+        "d2.8xlarge",
+        "d2.4xlarge",
+        "d2.2xlarge",
+        "d2.xlarge",
+        "m4.large",
+        "m4.xlarge",
+        "m4.2xlarge",
+        "m4.4xlarge",
+        "m4.10xlarge"
+      ]
+    },
+    "CoreInstanceCount": {
+      "Description": "Number of Core Instances",
+      "Type": "Number",
+      "Default": "1"
+    },
+    "CoreInstanceMarket": {
+      "Description": "Core Instance Market Type",
+      "Type": "String",
+      "Default": "SPOT",
+      "AllowedValues": [
+        "ON_DEMAND",
+        "SPOT"
+      ]
+    },
+    "CoreInstanceBid": {
+      "Description": "Bid Price if Market is Spot",
+      "Type": "String",
+      "Default": "0.00"
+    },
+    "CoreInstanceType": {
+      "Description": "Amazon EMR Slave EC2 instance type",
+      "Type": "String",
+      "Default": "m1.medium",
+      "AllowedValues": [
+        "cc2.8xlarge",
+        "c3.8xlarge",
+        "c3.4xlarge",
+        "c3.2xlarge",
+        "c3.xlarge",
+        "c3.large",
+        "c4.8xlarge",
+        "c4.4xlarge",
+        "c4.2xlarge",
+        "c4.xlarge",
+        "c4.large",
+        "r3.8xlarge",
+        "r3.4xlarge",
+        "r3.2xlarge",
+        "r3.xlarge",
+        "r3.large",
+        "i2.8xlarge",
+        "i2.4xlarge",
+        "i2.2xlarge",
+        "i2.xlarge",
+        "cr1.8xlarge",
+        "cg1.4xlarge",
+        "m1.medium",
+        "m1.large",
+        "m1.xlarge",
+        "m3.medium",
+        "m3.large",
+        "m3.xlarge",
+        "m3.2xlarge",
+        "hi1.4xlarge",
+        "g2.2xlarge",
+        "d2.8xlarge",
+        "d2.4xlarge",
+        "d2.2xlarge",
+        "d2.xlarge",
+        "m4.large",
+        "m4.xlarge",
+        "m4.2xlarge",
+        "m4.4xlarge",
+        "m4.10xlarge"
+      ]
+    },
+    "TaskGroup1InstanceCount": {
+      "Description": "Number of Core Instances",
+      "Type": "Number",
+      "Default": "1"
+    },
+    "TaskGroup1InstanceMarket": {
+      "Description": "Core Instance Market Type",
+      "Type": "String",
+      "Default": "SPOT",
+      "AllowedValues": [
+        "ON_DEMAND",
+        "SPOT"
+      ]
+    },
+    "TaskGroup1InstanceBid": {
+      "Description": "Bid Price if Market is Spot",
+      "Type": "String",
+      "Default": "0.00"
+    },
+    "TaskGroup1InstanceType": {
+      "Description": "Amazon EMR Slave EC2 instance type",
+      "Type": "String",
+      "Default": "m1.medium",
+      "AllowedValues": [
+        "cc2.8xlarge",
+        "c3.8xlarge",
+        "c3.4xlarge",
+        "c3.2xlarge",
+        "c3.xlarge",
+        "c3.large",
+        "c4.8xlarge",
+        "c4.4xlarge",
+        "c4.2xlarge",
+        "c4.xlarge",
+        "c4.large",
+        "r3.8xlarge",
+        "r3.4xlarge",
+        "r3.2xlarge",
+        "r3.xlarge",
+        "r3.large",
+        "i2.8xlarge",
+        "i2.4xlarge",
+        "i2.2xlarge",
+        "i2.xlarge",
+        "cr1.8xlarge",
+        "cg1.4xlarge",
+        "m1.medium",
+        "m1.large",
+        "m1.xlarge",
+        "m3.medium",
+        "m3.large",
+        "m3.xlarge",
+        "m3.2xlarge",
+        "hi1.4xlarge",
+        "g2.2xlarge",
+        "d2.8xlarge",
+        "d2.4xlarge",
+        "d2.2xlarge",
+        "d2.xlarge",
+        "m4.large",
+        "m4.xlarge",
+        "m4.2xlarge",
+        "m4.4xlarge",
+        "m4.10xlarge"
+      ]
+    },
+    "TaskGroup2InstanceCount": {
+      "Description": "Number of Core Instances",
+      "Type": "Number",
+      "Default": "1"
+    },
+    "TaskGroup2InstanceMarket": {
+      "Description": "Core Instance Market Type",
+      "Type": "String",
+      "Default": "SPOT",
+      "AllowedValues": [
+        "ON_DEMAND",
+        "SPOT"
+      ]
+    },
+    "TaskGroup2InstanceBid": {
+      "Description": "Bid Price if Market is Spot",
+      "Type": "String",
+      "Default": "0.00"
+    },
+    "TaskGroup2InstanceType": {
+      "Description": "Amazon EMR Slave EC2 instance type",
+      "Type": "String",
+      "Default": "m1.medium",
+      "AllowedValues": [
+        "cc2.8xlarge",
+        "c3.8xlarge",
+        "c3.4xlarge",
+        "c3.2xlarge",
+        "c3.xlarge",
+        "c3.large",
+        "c4.8xlarge",
+        "c4.4xlarge",
+        "c4.2xlarge",
+        "c4.xlarge",
+        "c4.large",
+        "r3.8xlarge",
+        "r3.4xlarge",
+        "r3.2xlarge",
+        "r3.xlarge",
+        "r3.large",
+        "i2.8xlarge",
+        "i2.4xlarge",
+        "i2.2xlarge",
+        "i2.xlarge",
+        "cr1.8xlarge",
+        "cg1.4xlarge",
+        "m1.medium",
+        "m1.large",
+        "m1.xlarge",
+        "m3.medium",
+        "m3.large",
+        "m3.xlarge",
+        "m3.2xlarge",
+        "hi1.4xlarge",
+        "g2.2xlarge",
+        "d2.8xlarge",
+        "d2.4xlarge",
+        "d2.2xlarge",
+        "d2.xlarge",
+        "m4.large",
+        "m4.xlarge",
+        "m4.2xlarge",
+        "m4.4xlarge",
+        "m4.10xlarge"
+      ]
+    }
+  },
+  "Mappings": {},
+  "Conditions": {
+    "CoreInstanceIsSpot": {
+      "Fn::Equals": [
+        {
+          "Ref": "CoreInstanceMarket"
+        },
+        "SPOT"
+      ]
+    },
+    "TaskGroup1IsSpot": {
+      "Fn::Equals": [
+        {
+          "Ref": "TaskGroup2InstanceMarket"
+        },
+        "SPOT"
+      ]
+    },
+    "TaskGroup2IsSpot": {
+      "Fn::Equals": [
+        {
+          "Ref": "TaskGroup2InstanceMarket"
+        },
+        "SPOT"
+      ]
+    }
+  },
+  "Resources": {
+    "EMRCluster": {
+      "Type": "AWS::EMR::Cluster",
+      "Properties": {
+        "VisibleToAllUsers": {
+          "Ref": "VisibleToAllUsers"
+        },
+        "BootstrapActions": [],
+        "LogUri": {
+          "Fn::Join": [
+            "",
+            [
+              "s3://",
+              {
+                "Ref": "DataLakeBucketName"
+              },
+              ".amazonaws.com"
+            ]
+          ]
+        },
+        "JobFlowRole": {
+          "Ref": "JobFlowInstanceInstanceProfile"
+        },
+        "ServiceRole": {
+          "Ref": "ServiceRole"
+        },
+        "ReleaseLabel": "emr-5.0.0",
+        "Instances": {
+          "Ec2KeyName": {
+            "Ref": "KeyName"
+          },
+          "Ec2SubnetId": {
+            "Ref": "SubnetId"
+          },
+          "MasterInstanceGroup": {
+            "InstanceCount": {
+              "Ref": "MasterInstanceCount"
+            },
+            "InstanceType": {
+              "Ref": "MasterInstanceType"
+            },
+            "Market": "ON_DEMAND",
+            "Name": {
+              "Fn::Join": [
+                "-",
+                [
+                  {
+                    "Ref": "ServiceName"
+                  },
+                  "Master"
+                ]
+              ]
+            }
+          },
+          "CoreInstanceGroup": {
+            "InstanceCount": {
+              "Ref": "CoreInstanceCount"
+            },
+            "InstanceType": {
+              "Ref": "CoreInstanceType"
+            },
+            "Market": {
+              "Ref": "CoreInstanceMarket"
+            },
+            "BidPrice": {
+              "Fn::If": [
+                "CoreInstanceIsSpot",
+                {
+                  "Ref": "CoreInstanceBid"
+                },
+                {
+                  "Ref": "AWS::NoValue"
+                }
+              ]
+            },
+            "Name": {
+              "Fn::Join": [
+                "-",
+                [
+                  {
+                    "Ref": "ServiceName"
+                  },
+                  "Core"
+                ]
+              ]
+            }
+          }
+        },
+        "Name": {
+          "Fn::Join": [
+            "-",
+            [
+              {
+                "Ref": "ServiceName"
+              },
+              "Cluster"
+            ]
+          ]
+        },
+        "Tags": [
+          {
+            "Key": "Description",
+            "Value": {
+              "Fn::Join": [
+                "-",
+                [
+                  {
+                    "Ref": "ServiceName"
+                  },
+                  "EMR Cluster"
+                ]
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "ServiceRolePolicies": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyName": "EMRInstance",
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Resource": "*",
+              "Action": [
+                "ec2:AuthorizeSecurityGroupEgress",
+                "ec2:AuthorizeSecurityGroupIngress",
+                "ec2:CancelSpotInstanceRequests",
+                "ec2:CreateNetworkInterface",
+                "ec2:CreateSecurityGroup",
+                "ec2:CreateTags",
+                "ec2:DeleteNetworkInterface",
+                "ec2:DeleteSecurityGroup",
+                "ec2:DeleteTags",
+                "ec2:DescribeAvailabilityZones",
+                "ec2:DescribeAccountAttributes",
+                "ec2:DescribeDhcpOptions",
+                "ec2:DescribeInstanceStatus",
+                "ec2:DescribeInstances",
+                "ec2:DescribeKeyPairs",
+                "ec2:DescribeNetworkAcls",
+                "ec2:DescribeNetworkInterfaces",
+                "ec2:DescribePrefixLists",
+                "ec2:DescribeRouteTables",
+                "ec2:DescribeSecurityGroups",
+                "ec2:DescribeSpotInstanceRequests",
+                "ec2:DescribeSpotPriceHistory",
+                "ec2:DescribeSubnets",
+                "ec2:DescribeVpcAttribute",
+                "ec2:DescribeVpcEndpoints",
+                "ec2:DescribeVpcEndpointServices",
+                "ec2:DescribeVpcs",
+                "ec2:DetachNetworkInterface",
+                "ec2:ModifyImageAttribute",
+                "ec2:ModifyInstanceAttribute",
+                "ec2:RequestSpotInstances",
+                "ec2:RevokeSecurityGroupEgress",
+                "ec2:RunInstances",
+                "ec2:TerminateInstances",
+                "ec2:DeleteVolume",
+                "ec2:DescribeVolumeStatus",
+                "ec2:DescribeVolumes",
+                "ec2:DetachVolume",
+                "iam:GetRole",
+                "iam:GetRolePolicy",
+                "iam:ListInstanceProfiles",
+                "iam:ListRolePolicies",
+                "iam:PassRole",
+                "s3:CreateBucket",
+                "s3:Get*",
+                "s3:List*",
+                "sdb:BatchPutAttributes",
+                "sdb:Select",
+                "sqs:CreateQueue",
+                "sqs:Delete*",
+                "sqs:GetQueue*",
+                "sqs:PurgeQueue",
+                "sqs:ReceiveMessage"
+              ]
+            }
+          ]
+        },
+        "Roles": [
+          {
+            "Ref": "ServiceRole"
+          }
+        ]
+      }
+    },
+    "ServiceRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "elasticmapreduce.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Path": "/"
+      }
+    },
+    "JobFlowInstanceInstanceProfile": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Properties": {
+        "Path": "/",
+        "Roles": [
+          {
+            "Ref": "JobFlowRole"
+          }
+        ]
+      }
+    },
+    "JobFlowRolePolicies": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyName": "EMRInstance",
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Resource": "*",
+              "Action": [
+                "cloudwatch:*",
+                "dynamodb:*",
+                "ec2:Describe*",
+                "elasticmapreduce:Describe*",
+                "elasticmapreduce:ListBootstrapActions",
+                "elasticmapreduce:ListClusters",
+                "elasticmapreduce:ListInstanceGroups",
+                "elasticmapreduce:ListInstances",
+                "elasticmapreduce:ListSteps",
+                "kinesis:CreateStream",
+                "kinesis:DeleteStream",
+                "kinesis:DescribeStream",
+                "kinesis:GetRecords",
+                "kinesis:GetShardIterator",
+                "kinesis:MergeShards",
+                "kinesis:PutRecord",
+                "kinesis:SplitShard",
+                "rds:Describe*",
+                "s3:*",
+                "sdb:*",
+                "sns:*",
+                "sqs:*"
+              ]
+            }
+          ]
+        },
+        "Roles": [
+          {
+            "Ref": "JobFlowRole"
+          }
+        ]
+      }
+    },
+    "JobFlowRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "ec2.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Path": "/"
+      }
+    }
+  },
+  "Outputs": {}
+}

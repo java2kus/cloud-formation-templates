@@ -1,0 +1,94 @@
+[
+  {
+    "ParameterKey": "ServiceName",
+    "ParameterValue": "EMRCluster"
+  },
+  {
+    "ParameterKey": "AccountName",
+    "ParameterValue": "test"
+  },
+  {
+    "ParameterKey": "Environment",
+    "ParameterValue": "Default"
+  },
+  {
+    "ParameterKey": "ResourceBucketName",
+    "ParameterValue": "zollie-cfn-resources-us-east-1-test"
+  },
+  {
+    "ParameterKey": "DataLakeBucketName",
+    "ParameterValue": "zollie-data-lake-us-east-1-test"
+  },
+  {
+    "ParameterKey": "ResourceBucketName",
+    "ParameterValue": "zollie-cfn-resources-us-east-1-test"
+  },
+  {
+    "ParameterKey": "KeyName",
+    "ParameterValue": "zollie"
+  },
+  {
+    "ParameterKey": "SubnetId",
+    "ParameterValue": "subnet-f78ec4dd"
+  },
+  {
+    "ParameterKey": "VisibleToAllUsers",
+    "ParameterValue": "true"
+  },
+  {
+    "ParameterKey": "MasterInstanceCount",
+    "ParameterValue": "1"
+  },
+  {
+    "ParameterKey": "MasterInstanceType",
+    "ParameterValue": "m1.medium"
+  },
+  {
+    "ParameterKey": "CoreInstanceCount",
+    "ParameterValue": "1"
+  },
+  {
+    "ParameterKey": "CoreInstanceType",
+    "ParameterValue": "m1.medium"
+  },
+  {
+    "ParameterKey": "CoreInstanceMarket",
+    "ParameterValue": "ON_DEMAND"
+  },
+  {
+    "ParameterKey": "CoreInstanceBid",
+    "ParameterValue": "0.01"
+  },
+  {
+    "ParameterKey": "TaskGroup1InstanceCount",
+    "ParameterValue": "1"
+  },
+  {
+    "ParameterKey": "TaskGroup1InstanceType",
+    "ParameterValue": "m1.medium"
+  },
+  {
+    "ParameterKey": "TaskGroup1InstanceMarket",
+    "ParameterValue": "SPOT"
+  },
+  {
+    "ParameterKey": "TaskGroup1InstanceBid",
+    "ParameterValue": "0.01"
+  },
+  {
+    "ParameterKey": "TaskGroup2InstanceCount",
+    "ParameterValue": "1"
+  },
+  {
+    "ParameterKey": "TaskGroup2InstanceType",
+    "ParameterValue": "m1.medium"
+  },
+  {
+    "ParameterKey": "TaskGroup2InstanceMarket",
+    "ParameterValue": "SPOT"
+  },
+  {
+    "ParameterKey": "TaskGroup2InstanceBid",
+    "ParameterValue": "0.01"
+  }
+]
