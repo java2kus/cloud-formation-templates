@@ -12,16 +12,30 @@
     "Environment": {
       "Description": "The Runtime Environment",
       "Type": "String",
-      "Default": "poc",
+      "Default": "Default",
       "AllowedValues": [
         "Default",
-        "poc",
-        "itg",
-        "qa",
-        "uat",
-        "prod-blue",
-        "prod-green"
+        "POC",
+        "ITG",
+        "QA",
+        "UAT",
+        "PROD-BLUE",
+        "PROD-GREEN"
       ]
+    },
+    "CostCenter": {
+      "Description": "CostCenter for Billing",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 9,
+      "AllowedPattern": "^[0-9]*$"
+    },
+    "CreatedBy": {
+      "Description": "CostCenter for Billing",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 8,
+      "AllowedPattern": "^[a-zA-Z][-a-zA-Z0-9]*$"
     },
     "AccountName": {
       "Description": "Name for the current AWS Account",
@@ -199,6 +213,16 @@
       "Type": "String",
       "Default": "0.01"
     },
+    "TaskGroup1InstanceRole": {
+      "Description": "Task Group Instance Role",
+      "Type": "String",
+      "Default": "TASK",
+      "AllowedValues": [
+        "MASTER",
+        "CORE",
+        "TASK"
+      ]
+    },
     "TaskGroup1InstanceType": {
       "Description": "Amazon EMR Slave EC2 instance type",
       "Type": "String",
@@ -264,6 +288,16 @@
       "Description": "Bid Price if Market is Spot",
       "Type": "String",
       "Default": "0.01"
+    },
+    "TaskGroup2InstanceRole": {
+      "Description": "Task Group Instance Role",
+      "Type": "String",
+      "Default": "TASK",
+      "AllowedValues": [
+        "MASTER",
+        "CORE",
+        "TASK"
+      ]
     },
     "TaskGroup2InstanceType": {
       "Description": "Amazon EMR Slave EC2 instance type",
@@ -334,7 +368,7 @@
     "TaskGroup2IsSpot": {
       "Fn::Equals": [
         {
-          "Ref": "TaskGroup1InstanceMarket"
+          "Ref": "TaskGroup2InstanceMarket"
         },
         "SPOT"
       ]
@@ -449,9 +483,33 @@
                   {
                     "Ref": "ServiceName"
                   },
-                  "EMR Cluster"
+                  "EMR CLuster"
                 ]
               ]
+            }
+          },
+          {
+            "Key": "CostCenter",
+            "Value": {
+              "Ref": "CostCenter"
+            }
+          },
+          {
+            "Key": "ApplicationName",
+            "Value": {
+              "Ref": "ServiceName"
+            }
+          },
+          {
+            "Key": "CreatedBy",
+            "Value": {
+              "Ref": "CreatedBy"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
             }
           }
         ]
@@ -637,10 +695,21 @@
           "Ref": "TaskGroup1InstanceType"
         },
         "InstanceRole": {
-          "Ref": "JobFlowInstanceInstanceProfile"
+          "Ref": "TaskGroup1InstanceRole"
         },
         "Market": {
           "Ref": "TaskGroup1InstanceMarket"
+        },
+        "BidPrice": {
+          "Fn::If": [
+            "TaskGroup1IsSpot",
+            {
+              "Ref": "TaskGroup1InstanceBid"
+            },
+            {
+              "Ref": "AWS::NoValue"
+            }
+          ]
         },
         "Name": {
           "Fn::Join": [
@@ -668,10 +737,21 @@
           "Ref": "TaskGroup2InstanceType"
         },
         "InstanceRole": {
-          "Ref": "JobFlowInstanceInstanceProfile"
+          "Ref": "TaskGroup2InstanceRole"
         },
         "Market": {
           "Ref": "TaskGroup2InstanceMarket"
+        },
+        "BidPrice": {
+          "Fn::If": [
+            "TaskGroup2IsSpot",
+            {
+              "Ref": "TaskGroup2InstanceBid"
+            },
+            {
+              "Ref": "AWS::NoValue"
+            }
+          ]
         },
         "Name": {
           "Fn::Join": [

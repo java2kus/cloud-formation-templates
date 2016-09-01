@@ -12,6 +12,14 @@
     "ParameterValue": "Default"
   },
   {
+    "ParameterKey": "CostCenter",
+    "ParameterValue": "5501983"
+  },
+  {
+    "ParameterKey": "CreatedBy",
+    "ParameterValue": "zollke01"
+  },
+  {
     "ParameterKey": "ResourceBucketName",
     "ParameterValue": "zollie-cfn-resources-us-east-1-test"
   },
