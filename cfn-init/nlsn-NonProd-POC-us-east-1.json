@@ -9,7 +9,7 @@
   },
   {
     "ParameterKey": "Environment",
-    "ParameterValue": "POC"
+    "ParameterValue": "DEV"
   },
   {
     "ParameterKey": "CostCenter",
@@ -21,10 +21,10 @@
   },
   {
     "ParameterKey": "ResourceBucketName",
-    "ParameterValue": "zollie-cfn-resources-us-east-1-test"
+    "ParameterValue": "us-east-1-nlsn-w-digital-cfn-resources-dev"
   },
   {
     "ParameterKey": "TemplateBucketName",
-    "ParameterValue": "zollie-cfn-templates-us-east-1-test"
+    "ParameterValue": "us-east-1-nlsn-w-digital-cfn-templates-dev"
   }
 ]

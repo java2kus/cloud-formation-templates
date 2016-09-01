@@ -2,14 +2,50 @@
   "AWSTemplateFormatVersion": "2010-09-09",
   "Description": "CloudFormation Initialization of Resource and Template Buckets",
   "Parameters": {
+    "ServiceName": {
+      "Description": "Becomes the short hostname used in DNS, Naming, Comments, and other things.",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255,
+      "AllowedPattern": "^[a-zA-Z][-a-zA-Z0-9]*$"
+    },
     "Environment": {
       "Description": "The Runtime Environment",
       "Type": "String",
-      "Default": "dev",
+      "Default": "DEV",
       "AllowedValues": [
-        "dev",
-        "prod"
+        "ALPHA",
+        "BETA",
+        "CI/CD",
+        "POC",
+        "DEV",
+        "ITG",
+        "QA",
+        "UAT",
+        "PROD-BLUE",
+        "PROD-GREEN"
       ]
+    },
+    "CostCenter": {
+      "Description": "CostCenter for Billing",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 9,
+      "AllowedPattern": "^[0-9]*$"
+    },
+    "CreatedBy": {
+      "Description": "CostCenter for Billing",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 8,
+      "AllowedPattern": "^[a-zA-Z][-a-zA-Z0-9]*$"
+    },
+    "AccountName": {
+      "Description": "Name for the current AWS Account",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255,
+      "AllowedPattern": "^[a-zA-Z][-a-zA-Z0-9]*$"
     },
     "ResourceBucketName": {
       "Description": "Name for the Bucket to store CloudFormation resources in",
@@ -80,7 +116,47 @@
       "Properties": {
         "BucketName": {
           "Ref": "ResourceBucketName"
-        }
+        },
+        "Tags": [
+          {
+            "Key": "Description",
+            "Value": {
+              "Fn::Join": [
+                "-",
+                [
+                  {
+                    "Ref": "ServiceName"
+                  },
+                  "EMR CLuster"
+                ]
+              ]
+            }
+          },
+          {
+            "Key": "CostCenter",
+            "Value": {
+              "Ref": "CostCenter"
+            }
+          },
+          {
+            "Key": "ApplicationName",
+            "Value": {
+              "Ref": "ServiceName"
+            }
+          },
+          {
+            "Key": "CreatedBy",
+            "Value": {
+              "Ref": "CreatedBy"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          }
+        ]
       }
     },
     "TemplatesPolicy": {
@@ -138,7 +214,47 @@
         },
         "VersioningConfiguration": {
           "Status": "Enabled"
-        }
+        },
+        "Tags": [
+          {
+            "Key": "Description",
+            "Value": {
+              "Fn::Join": [
+                "-",
+                [
+                  {
+                    "Ref": "ServiceName"
+                  },
+                  "EMR CLuster"
+                ]
+              ]
+            }
+          },
+          {
+            "Key": "CostCenter",
+            "Value": {
+              "Ref": "CostCenter"
+            }
+          },
+          {
+            "Key": "ApplicationName",
+            "Value": {
+              "Ref": "ServiceName"
+            }
+          },
+          {
+            "Key": "CreatedBy",
+            "Value": {
+              "Ref": "CreatedBy"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          }
+        ]
       }
     }
   },

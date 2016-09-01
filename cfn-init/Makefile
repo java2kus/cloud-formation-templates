@@ -1,15 +1,33 @@
 cform = cfn-init.cform
 name = CloudFormationInit
 # set with something like aws configure set mnemonic zollie
+lob = $(shell aws configure get lob)
 mnemonic = $(shell aws configure get mnemonic)
+mnemonic_upper = $(strip $(shell echo $(mnemonic) | awk '{print toupper($0)}'))
 region = $(shell aws configure get region)
 account = $(shell aws configure get name)
 account_lower = $(shell echo $(account) | tr  '[A-Z]' '[a-z]')
 env = $(shell aws configure get env)
+# us-east-1-nlsn-w-digital-cfn-resources-dev
 resource_bucket_name = $(mnemonic)-cfn-resources-$(region)-$(account_lower)
 template_bucket_name = $(mnemonic)-cfn-templates-$(region)-$(account_lower)
+name=$(shell cat $(mnemonic)-$(ACCOUNT)-$(ENV)-$(region).json | jq -r '.[] \
+	| select(.ParameterKey=="ServiceName") | .ParameterValue')
+
 ifeq ($(NAME),)
 	NAME=$(name)
+endif
+
+ifeq ($(SERVICE_NAME),)
+	SERVICE_NAME=$(NAME)
+endif
+
+ifeq ($(LOB),)
+	LOB=$(lob)
+endif
+
+ifeq ($(MNEMONIC),)
+	MNEMONIC=$(mnemonic_upper)
 endif
 
 ifeq ($(ENV),)
@@ -28,7 +46,8 @@ ifeq ($(TEMPLATE_BUCKET_NAME),)
 	TEMPLATE_BUCKET_NAME=$(template_bucket_name)
 endif
 
-STACK_NAME=$(NAME)#-$(ENV)
+STACK_NAME=$(MNEMONIC)-$(LOB)-$(NAME)-$(ENV)
+
 
 # lists all available targets
 list:
