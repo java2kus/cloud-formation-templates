@@ -69,7 +69,7 @@
   },
   {
     "ParameterKey": "TaskGroup1InstanceMarket",
-    "ParameterValue": "SPOT"
+    "ParameterValue": "ON_DEMAND"
   },
   {
     "ParameterKey": "TaskGroup1InstanceBid",

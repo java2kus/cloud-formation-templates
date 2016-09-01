@@ -12,10 +12,15 @@
     "Environment": {
       "Description": "The Runtime Environment",
       "Type": "String",
-      "Default": "Default",
+      "Default": "poc",
       "AllowedValues": [
         "Default",
-        "LoadTest"
+        "poc",
+        "itg",
+        "qa",
+        "uat",
+        "prod-blue",
+        "prod-green"
       ]
     },
     "AccountName": {
@@ -126,7 +131,7 @@
     "CoreInstanceBid": {
       "Description": "Bid Price if Market is Spot",
       "Type": "String",
-      "Default": "0.00"
+      "Default": "0.01"
     },
     "CoreInstanceType": {
       "Description": "Amazon EMR Slave EC2 instance type",
@@ -192,7 +197,7 @@
     "TaskGroup1InstanceBid": {
       "Description": "Bid Price if Market is Spot",
       "Type": "String",
-      "Default": "0.00"
+      "Default": "0.01"
     },
     "TaskGroup1InstanceType": {
       "Description": "Amazon EMR Slave EC2 instance type",
@@ -258,7 +263,7 @@
     "TaskGroup2InstanceBid": {
       "Description": "Bid Price if Market is Spot",
       "Type": "String",
-      "Default": "0.00"
+      "Default": "0.01"
     },
     "TaskGroup2InstanceType": {
       "Description": "Amazon EMR Slave EC2 instance type",
@@ -321,7 +326,7 @@
     "TaskGroup1IsSpot": {
       "Fn::Equals": [
         {
-          "Ref": "TaskGroup2InstanceMarket"
+          "Ref": "TaskGroup1InstanceMarket"
         },
         "SPOT"
       ]
@@ -329,7 +334,7 @@
     "TaskGroup2IsSpot": {
       "Fn::Equals": [
         {
-          "Ref": "TaskGroup2InstanceMarket"
+          "Ref": "TaskGroup1InstanceMarket"
         },
         "SPOT"
       ]
@@ -621,7 +626,85 @@
         },
         "Path": "/"
       }
+    },
+    "TaskInstanceGroup1Config": {
+      "Type": "AWS::EMR::InstanceGroupConfig",
+      "Properties": {
+        "InstanceCount": {
+          "Ref": "TaskGroup1InstanceCount"
+        },
+        "InstanceType": {
+          "Ref": "TaskGroup1InstanceType"
+        },
+        "InstanceRole": {
+          "Ref": "JobFlowInstanceInstanceProfile"
+        },
+        "Market": {
+          "Ref": "TaskGroup1InstanceMarket"
+        },
+        "Name": {
+          "Fn::Join": [
+            "-",
+            [
+              {
+                "Ref": "ServiceName"
+              },
+              "TaskInstanceGroup1"
+            ]
+          ]
+        },
+        "JobFlowId": {
+          "Ref": "EMRCluster"
+        }
+      }
+    },
+    "TaskInstanceGroup2Config": {
+      "Type": "AWS::EMR::InstanceGroupConfig",
+      "Properties": {
+        "InstanceCount": {
+          "Ref": "TaskGroup2InstanceCount"
+        },
+        "InstanceType": {
+          "Ref": "TaskGroup2InstanceType"
+        },
+        "InstanceRole": {
+          "Ref": "JobFlowInstanceInstanceProfile"
+        },
+        "Market": {
+          "Ref": "TaskGroup2InstanceMarket"
+        },
+        "Name": {
+          "Fn::Join": [
+            "-",
+            [
+              {
+                "Ref": "ServiceName"
+              },
+              "TaskInstanceGroup2"
+            ]
+          ]
+        },
+        "JobFlowId": {
+          "Ref": "EMRCluster"
+        }
+      }
     }
   },
-  "Outputs": {}
+  "Outputs": {
+    "ClusterId": {
+      "Description": "EMR Cluster Id",
+      "Value": {
+        "Ref": "EMRCluster"
+      }
+    },
+    "MasterPublicDNS": {
+      "Description": "EMR Master Public DNS",
+      "Value": {
+        "Fn::GetAtt": [
+          "EMRCluster",
+          "MasterPublicDNS"
+        ]
+      }
+    }
+  }
 }
