@@ -1,0 +1,131 @@
+[
+  {
+    "ParameterKey": "ServiceName",
+    "ParameterValue": "Squid"
+  },
+  {
+    "ParameterKey": "AccountName",
+    "ParameterValue": "test"
+  },
+  {
+    "ParameterKey": "Environment",
+    "ParameterValue": "Default"
+  },
+  {
+    "ParameterKey": "AMI",
+    "ParameterValue": "ami-6869aa05"
+  },
+  {
+    "ParameterKey": "RootVolumeSnapshotId",
+    "ParameterValue": "snap-25dd2ac1"
+  },
+  {
+    "ParameterKey": "RootVolumeDeleteOnTermination",
+    "ParameterValue": "true"
+  },
+  {
+    "ParameterKey": "DataVolumeSnapshotId",
+    "ParameterValue": ""
+  },
+  {
+    "ParameterKey": "DataVolumeSize",
+    "ParameterValue": "50"
+  },
+  {
+    "ParameterKey": "DataVolumeDeleteOnTermination",
+    "ParameterValue": "true"
+  },
+  {
+    "ParameterKey": "DataVolumeType",
+    "ParameterValue": "gp2"
+  },
+  {
+    "ParameterKey": "InstancePort",
+    "ParameterValue": "8080"
+  },
+  {
+    "ParameterKey": "AdminPort",
+    "ParameterValue": "22"
+  },
+  {
+    "ParameterKey": "AdminSecurityGroupId",
+    "ParameterValue": ""
+  },
+  {
+    "ParameterKey": "MinClusterSize",
+    "ParameterValue": "1"
+  },
+  {
+    "ParameterKey": "MaxClusterSize",
+    "ParameterValue": "5"
+  },
+  {
+    "ParameterKey": "DesiredCapacity",
+    "ParameterValue": "1"
+  },
+  {
+    "ParameterKey": "KeyName",
+    "ParameterValue": "zollie"
+  },
+  {
+    "ParameterKey": "VPCId",
+    "ParameterValue": "vpc-6bfc530c"
+  },
+  {
+    "ParameterKey": "VPCCidrBlock",
+    "ParameterValue": "10.0.0.0/16"
+  },
+  {
+    "ParameterKey": "VPCPrivateHostedZone",
+    "ParameterValue": "Z3HW9AV4DM4ZOM"
+  },
+  {
+    "ParameterKey": "PrivateSubnet0",
+    "ParameterValue": "subnet-f78ec4dd"
+  },
+  {
+    "ParameterKey": "PrivateSubnet1",
+    "ParameterValue": "subnet-23c2f855"
+  },
+  {
+    "ParameterKey": "PublicSubnet0",
+    "ParameterValue": "subnet-f68ec4dc"
+  },
+  {
+    "ParameterKey": "PublicSubnet1",
+    "ParameterValue": "subnet-22c2f854"
+  },
+  {
+    "ParameterKey": "AZ0",
+    "ParameterValue": "us-east-1a"
+  },
+  {
+    "ParameterKey": "AZ1",
+    "ParameterValue": "us-east-1b"
+  },
+
+  {
+    "ParameterKey": "InstanceType",
+    "ParameterValue": "m3.medium"
+  },
+  {
+    "ParameterKey": "PublicRootZone",
+    "ParameterValue": "Z36LKYPGE4IB41"
+  },
+  {
+    "ParameterKey": "PublicRegionZone",
+    "ParameterValue": "ZADK6SEHACJGA"
+  },
+  {
+    "ParameterKey": "RootDomain",
+    "ParameterValue": "zollie.rocks"
+  },
+  {
+    "ParameterKey": "ResourceBucketName",
+    "ParameterValue": "zollie-cfn-resources-us-east-1-test"
+  },
+  {
+    "ParameterKey": "DataLakeBucketName",
+    "ParameterValue": "zollie-data-lake-us-east-1-test"
+  }
+]

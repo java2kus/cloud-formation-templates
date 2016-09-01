@@ -14,8 +14,11 @@
       "Type": "String",
       "Default": "Default",
       "AllowedValues": [
-        "Default",
+        "ALPHA",
+        "BETA",
+        "CI/CD",
         "POC",
+        "DEV",
         "ITG",
         "QA",
         "UAT",
