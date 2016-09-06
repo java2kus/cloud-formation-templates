@@ -1,4 +1,4 @@
-cform = squid.cform
+cform = emm-squid-run.cform
 region = $(shell aws configure get region)
 # set with something like aws configure set mnemonic zollie
 mnemonic = $(shell aws configure get mnemonic)

@@ -1,0 +1,964 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "CSW Build Box",
+  "Parameters": {
+    "ServiceName": {
+      "Description": "Becomes the short hostname used in DNS, Naming, Comments, and other things.",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255,
+      "AllowedPattern": "^[a-zA-Z][-a-zA-Z0-9]*$",
+      "Default": "CSW-Build"
+    },
+    "Environment": {
+      "Description": "The Runtime Environment",
+      "Type": "String",
+      "Default": "Default",
+      "AllowedValues": [
+        "Default",
+        "LoadTest"
+      ]
+    },
+    "AdminUser": {
+      "Description": "User name for the new local administrator account",
+      "Type": "String",
+      "Default": "StackAdmin",
+      "MinLength": "5",
+      "MaxLength": "25",
+      "AllowedPattern": "[a-zA-Z0-9]*"
+    },
+    "AdminPassword": {
+      "Description": "Password for the administrative account. Must be at least 8 characters containing letters, numbers and symbols",
+      "Type": "String",
+      "MinLength": "8",
+      "MaxLength": "32",
+      "AllowedPattern": "(?=^.{6,255}$)((?=.*\\d)(?=.*[A-Z])(?=.*[a-z])|(?=.*\\d)(?=.*[^A-Za-z0-9])(?=.*[a-z])|(?=.*[^A-Za-z0-9])(?=.*[A-Z])(?=.*[a-z])|(?=.*\\d)(?=.*[A-Z])(?=.*[^A-Za-z0-9]))^.*",
+      "NoEcho": "true",
+      "Default": "  "
+    },
+    "KeyName": {
+      "Description": "Name of an existing EC2 KeyPair to enable SSH access to the instance",
+      "Type": "AWS::EC2::KeyPair::KeyName",
+      "Default": "kevinz",
+      "ConstraintDescription": "Can contain only ASCII characters."
+    },
+    "DataVolumeSnapshotId": {
+      "Type": "String",
+      "Description": "SnapshotId for Data Volume. Leave Blank for No Volume."
+    },
+    "DataVolumeSize": {
+      "Type": "Number",
+      "Default": "10",
+      "Description": "Size of attaced EBS Volume used for Data Storage"
+    },
+    "DataVolumeDeleteOnTermination": {
+      "Type": "String",
+      "Default": "true",
+      "Description": "Delete EBS Volumes On Termination",
+      "AllowedValues": [
+        "true",
+        "false"
+      ]
+    },
+    "DataVolumeType": {
+      "Description": "The Type of the Data Volume",
+      "Type": "String",
+      "Default": "standard",
+      "AllowedValues": [
+        "standard",
+        "io1",
+        "gp2"
+      ]
+    },
+    "VPCStackName": {
+      "Description": "Name of an active CloudFormation stack that contains the networking resources that will be used in this stack.",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255,
+      "AllowedPattern": "^[a-zA-Z][-a-zA-Z0-9]*$",
+      "Default": "VPC-Default"
+    },
+    "InstanceType": {
+      "Description": "Amazon EC2 instance type",
+      "Type": "String",
+      "Default": "m1.medium",
+      "AllowedValues": [
+        "t1.micro",
+        "t2.micro",
+        "t2.small",
+        "t2.medium",
+        "m1.small",
+        "m1.medium",
+        "m1.large",
+        "m1.xlarge",
+        "m2.xlarge",
+        "m2.2xlarge",
+        "m2.4xlarge",
+        "m3.medium",
+        "m3.large",
+        "m3.xlarge",
+        "m3.2xlarge",
+        "c1.medium",
+        "c1.xlarge",
+        "c3.large",
+        "c3.xlarge",
+        "c3.2xlarge",
+        "c3.4xlarge",
+        "c3.8xlarge",
+        "c4.large",
+        "c4.xlarge",
+        "c4.2xlarge",
+        "c4.4xlarge",
+        "c4.8xlarge",
+        "g2.2xlarge",
+        "r3.large",
+        "r3.xlarge",
+        "r3.2xlarge",
+        "r3.4xlarge",
+        "r3.8xlarge",
+        "i2.xlarge",
+        "i2.2xlarge",
+        "i2.4xlarge",
+        "i2.8xlarge",
+        "d2.xlarge",
+        "d2.2xlarge",
+        "d2.4xlarge",
+        "d2.8xlarge",
+        "hi1.4xlarge",
+        "hs1.8xlarge",
+        "cr1.8xlarge",
+        "cc2.8xlarge",
+        "cg1.4xlarge"
+      ],
+      "ConstraintDescription": "must be a valid EC2 instance type."
+    }
+  },
+  "Conditions": {
+    "IsDataVolume": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "DataVolumeSnapshotId"
+            },
+            ""
+          ]
+        }
+      ]
+    }
+  },
+  "Mappings": {
+    "383166358680": {
+      "us-east-1": {
+        "Name": "Sandbox",
+        "CloudFormationResourceBucketName": "nyld-cfn-resources-us-east-1-sandbox",
+        "DataLakeBucketName": "nyld-data-us-east-1-sandbox",
+        "RootDomain": "nyldirectlabs.com",
+        "PublicRegionZone": "Z2TB7H4CHMKYGS"
+      },
+      "us-west-2": {
+        "Name": "Sandbox",
+        "CloudFormationResourceBucketName": "nyld-cfn-resources-us-west-2-sandbox",
+        "DataLakeBucketName": "nyld-data-us-west-2-sandbox",
+        "RootDomain": "nyldirectlabs.com",
+        "PublicRegionZone": "Z3G6WGWHL031HP"
+      }
+    },
+    "AWSRegion2AMI": {
+      "us-east-1": {
+        "Windows2008r2": "ami-3bd17a50",
+        "Windows2012r2": "ami-3586ac5f"
+      },
+      "us-west-2": {
+        "Windows2008r2": "ami-59c3c969",
+        "Windows2012r2": "ami-df8767bf"
+      },
+      "us-west-1": {
+        "Windows2008r2": "ami-ede01ea9",
+        "Windows2012r2": "ami-bf2dd3fb"
+      },
+      "eu-west-1": {
+        "Windows2008r2": "ami-82e6b4f5",
+        "Windows2012r2": "ami-1a92cf6d"
+      },
+      "eu-central-1": {
+        "Windows2008r2": "ami-0a181f17",
+        "Windows2012r2": "ami-86393e9b"
+      },
+      "ap-northeast-1": {
+        "Windows2008r2": "ami-ac912aac",
+        "Windows2012r2": "ami-b4ce74b4"
+      },
+      "ap-southeast-1": {
+        "Windows2008r2": "ami-724a4420",
+        "Windows2012r2": "ami-12737d40"
+      },
+      "ap-southeast-2": {
+        "Windows2008r2": "ami-67aae95d",
+        "Windows2012r2": "ami-7ddb9847"
+      },
+      "sa-east-1": {
+        "Windows2008r2": "ami-6ddc5470",
+        "Windows2012r2": "ami-89ff7794"
+      },
+      "cn-north-1": {
+        "Windows2008r2": "ami-26d14d1f",
+        "Windows2012r2": "ami-bcce5285"
+      }
+    }
+  },
+  "Resources": {
+    "Instance": {
+      "Type": "AWS::EC2::Instance",
+      "Metadata": {
+        "AWS::CloudFormation::Authentication": {
+          "S3AccessCreds": {
+            "type": "S3",
+            "roleName": {
+              "Ref": "InstanceRole"
+            }
+          }
+        },
+        "AWS::CloudFormation::Init": {
+          "configSets": {
+            "config": [
+              "setup"
+            ]
+          },
+          "setup": {
+            "packages": {
+              "msi": {
+                "awscli": "https://s3.amazonaws.com/aws-cli/AWSCLI64.msi"
+              }
+            },
+            "files": {
+              "C:\\cfn\\scripts\\Set-AdminPassword.ps1": {
+                "content": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "$admin=[adsi](\"WinNT://$env:COMPUTERNAME/administrator, user\")\n",
+                      "$admin.psbase.invoke(\"SetPassword\",\"",
+                      {
+                        "Ref": "AdminPassword"
+                      },
+                      "\")"
+                    ]
+                  ]
+                }
+              },
+              "C:\\Program Files\\Amazon\\Ec2ConfigService\\Settings\\AWS.EC2.Windows.CloudWatch.json": {
+                "authentication": "S3AccessCreds",
+                "source": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "https://s3.amazonaws.com/",
+                      {
+                        "Fn::FindInMap": [
+                          {
+                            "Ref": "AWS::AccountId"
+                          },
+                          {
+                            "Ref": "AWS::Region"
+                          },
+                          "CloudFormationResourceBucketName"
+                        ]
+                      },
+                      "/",
+                      {
+                        "Ref": "ServiceName"
+                      },
+                      "-AWS.EC2.Windows.CloudWatch.json"
+                    ]
+                  ]
+                }
+              },
+              "c:\\cfn\\scripts\\drives.diskpart.txt": {
+                "content": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "rem DISKPART script to mount drives on D:\n",
+                      "list disk\n",
+                      "list volume\n",
+                      "rem Make sure second disk is on F:\n",
+                      "select disk 2\n",
+                      "select partition 1\n",
+                      "assign letter=d\n"
+                    ]
+                  ]
+                }
+              },
+              "c:\\cfn\\scripts\\renamedrives.ps1": {
+                "content": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "# Mount and rename drives properly\n",
+                      "diskpart c:\\cfn\\scripts\\drives.diskpart.txt\n",
+                      "$fdrive = Get-WmiObject -Class win32_volume -Filter \"DriveLetter = 'D:'\"\n",
+                      "$fdrive.Label = \"DataVolume\"\n",
+                      "$fdrive.put()\n"
+                    ]
+                  ]
+                }
+              },
+              "C:\\cfn\\scripts\\Enable-Plugins.ps1": {
+                "content": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "$EC2SettingsFile=\"C:\\Program Files\\Amazon\\Ec2ConfigService\\Settings\\Config.xml\"\n",
+                      "$xml = [xml](get-content $EC2SettingsFile)\n",
+                      "$xmlElement = $xml.get_DocumentElement()\n",
+                      "$xmlElementToModify = $xmlElement.Plugins\n",
+                      "\n",
+                      "foreach ($element in $xmlElementToModify.Plugin)\n",
+                      "{\n",
+                      "    if ($element.name -eq \"AWS.EC2.Windows.CloudWatch.PlugIn\")\n",
+                      "    {\n",
+                      "        $element.State=\"Enabled\"\n",
+                      "    }\n",
+                      "    if ($element.name -eq \"Ec2EventLog\")\n",
+                      "    {\n",
+                      "        $element.State=\"Enabled\"\n",
+                      "    }\n",
+                      "    if ($element.name -eq \"Ec2SetPassword\")\n",
+                      "    {\n",
+                      "        $element.State=\"Enabled\"\n",
+                      "    }\n",
+                      "}\n",
+                      "$xml.Save($EC2SettingsFile)\n"
+                    ]
+                  ]
+                }
+              },
+              "C:\\cfn\\scripts\\setup-winrm.cmd": {
+                "content": {
+                  "Fn::Join": [
+                    "\n",
+                    [
+                      "setlocal EnableDelayedExpansion EnableExtensions",
+                      "title Configuring Windows Remote Management...",
+                      "",
+                      "cmd /c net stop winrm",
+                      "cmd /c winrm quickconfig -q",
+                      "cmd /c winrm quickconfig -transport:http",
+                      "cmd /c winrm set winrm/config @{MaxTimeoutms=\"1800000\"}",
+                      "cmd /c winrm set winrm/config/winrs @{MaxMemoryPerShellMB=\"2048\"}",
+                      "cmd /c winrm set winrm/config/service @{AllowUnencrypted=\"true\"}",
+                      "cmd /c winrm set winrm/config/service/auth @{Basic=\"true\"}",
+                      "cmd /c winrm set winrm/config/listener?Address=*+Transport=HTTP @{Port=\"5985\"}",
+                      "cmd /c sc config winrm start= auto",
+                      "cmd /c net start winrm",
+                      "",
+                      "cmd /c netsh firewall set service type=remoteadmin mode=enable",
+                      "cmd /c netsh advfirewall firewall set rule group=\"remote administration\" new enable=yes",
+                      "cmd /c netsh advfirewall firewall add rule name=\"Port 5985\" dir=in action=allow protocol=TCP localport=5985"
+                    ]
+                  ]
+                }
+              },
+              "C:\\cfn\\scripts\\Git.exe": {
+                "authentication": "S3AccessCreds",
+                "source": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "https://s3.amazonaws.com/",
+                      {
+                        "Fn::FindInMap": [
+                          {
+                            "Ref": "AWS::AccountId"
+                          },
+                          {
+                            "Ref": "AWS::Region"
+                          },
+                          "CloudFormationResourceBucketName"
+                        ]
+                      },
+                      "/",
+                      "Git-2.7.2-32-bit.exe"
+                    ]
+                  ]
+                }
+              },
+              "C:\\cfn\\scripts\\BuildTools_Full.exe": {
+                "authentication": "S3AccessCreds",
+                "source": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "https://s3.amazonaws.com/",
+                      {
+                        "Fn::FindInMap": [
+                          {
+                            "Ref": "AWS::AccountId"
+                          },
+                          {
+                            "Ref": "AWS::Region"
+                          },
+                          "CloudFormationResourceBucketName"
+                        ]
+                      },
+                      "/",
+                      "BuildTools_Full.exe"
+                    ]
+                  ]
+                }
+              },
+              "C:\\cfn\\scripts\\jdk.exe": {
+                "authentication": "S3AccessCreds",
+                "source": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "https://s3.amazonaws.com/",
+                      {
+                        "Fn::FindInMap": [
+                          {
+                            "Ref": "AWS::AccountId"
+                          },
+                          {
+                            "Ref": "AWS::Region"
+                          },
+                          "CloudFormationResourceBucketName"
+                        ]
+                      },
+                      "/",
+                      "jdk-8u77-windows-x64.exe"
+                    ]
+                  ]
+                }
+              },
+              "C:\\Program Files (x86)\\MSBuild\\MSBuildMergeFiles.zip": {
+                "authentication": "S3AccessCreds",
+                "source": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "https://s3.amazonaws.com/",
+                      {
+                        "Fn::FindInMap": [
+                          {
+                            "Ref": "AWS::AccountId"
+                          },
+                          {
+                            "Ref": "AWS::Region"
+                          },
+                          "CloudFormationResourceBucketName"
+                        ]
+                      },
+                      "/",
+                      "MSBuildMergeFiles.zip"
+                    ]
+                  ]
+                }
+              },
+              "C:\\cfn\\scripts\\Unzip.ps1": {
+                "content": {
+                  "Fn::Join": [
+                    "\n",
+                    [
+                      "function unzip($zipFile, $destinationFolder) {",
+                      "   $shell_app=new-object -com shell.application",
+                      "   $zip = $shell_app.namespace($zipFile)",
+                      "   $destination = $shell_app.namespace($destinationFolder)",
+                      "   $destination.Copyhere($zip.items(), 0x14)",
+                      "}",
+                      "unzip \"C:\\Program Files (x86)\\MSBuild\\MSBuildMergeFiles.zip\" \"C:\\Program Files (x86)\\MSBuild\\\""
+                    ]
+                  ]
+                }
+              },
+              "C:\\cfn\\scripts\\slave.jar": {
+                "authentication": "S3AccessCreds",
+                "source": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "https://s3.amazonaws.com/",
+                      {
+                        "Fn::FindInMap": [
+                          {
+                            "Ref": "AWS::AccountId"
+                          },
+                          {
+                            "Ref": "AWS::Region"
+                          },
+                          "CloudFormationResourceBucketName"
+                        ]
+                      },
+                      "/",
+                      "slave.jar"
+                    ]
+                  ]
+                }
+              }
+            },
+            "commands": {
+              "1-create-admin": {
+                "command": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "net user /add ",
+                      {
+                        "Ref": "AdminUser"
+                      },
+                      " ",
+                      {
+                        "Ref": "AdminPassword"
+                      }
+                    ]
+                  ]
+                }
+              },
+              "2-set-admin-group": {
+                "command": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "net localgroup Administrators ",
+                      {
+                        "Ref": "AdminUser"
+                      },
+                      " /ADD"
+                    ]
+                  ]
+                }
+              },
+              "3-set-admin-pass": {
+                "command": "powershell.exe -ExecutionPolicy RemoteSigned C:\\cfn\\scripts\\Set-AdminPassword.ps1"
+              },
+              "4-rename_drives": {
+                "Fn::If": [
+                  "IsDataVolume",
+                  {
+                    "command": "powershell.exe -ExecutionPolicy Bypass -NoLogo -NonInteractive -NoProfile -File c:\\cfn\\scripts\\renamedrives.ps1",
+                    "waitAfterCompletion": "0"
+                  },
+                  {
+                    "Ref": "AWS::NoValue"
+                  }
+                ]
+              },
+              "5-enable-plugins": {
+                "command": "powershell.exe -ExecutionPolicy RemoteSigned C:\\cfn\\scripts\\Enable-Plugins.ps1"
+              },
+              "6-install-features": {
+                "command": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "powershell.exe -ExecutionPolicy Bypass Install-WindowsFeature -Name Web-Server -IncludeAllSubFeature"
+                    ]
+                  ]
+                }
+              },
+              "7-install-git": {
+                "command": "cmd.exe /c \"C:\\cfn\\scripts\\Git.exe /SP- /VERYSILENT /SUPPRESSMSGBOXES /NORESTART\""
+              },
+              "8-install-build-tools": {
+                "command": "cmd.exe /c \"C:\\cfn\\scripts\\BuildTools_Full.exe /Full /NoRestart /Quiet /Silent\""
+              },
+              "9-install-jdk": {
+                "command": "cmd.exe /c \"C:\\cfn\\scripts\\jdk.exe /s ADDLOCAL=\"ToolsFeature,SourceFeature,PublicjreFeature\"\""
+              },
+              "A-setup-winrm": {
+                "command": "cmd.exe /c \"C:\\cfn\\scripts\\setup-winrm.cmd\"",
+                "ignoreErrors": "true"
+              },
+              "B-set-java-home": {
+                "command": "powershell.exe -ExecutionPolicy RemoteSigned [Environment]::SetEnvironmentVariable(\"JAVA_HOME\", \"C:\\Program Files\\Java\\jdk1.8.0_77\", \"Machine\")"
+              },
+              "C-install-jenkins-slave": {
+                "command": "cmd.exe /c \"java -jar C:\\cfn\\scripts\\slave.jar\""
+              },
+              "D-unzip-merge-files": {
+                "command": "powershell.exe -ExecutionPolicy RemoteSigned C:\\cfn\\scripts\\Unzip.ps1",
+                "ignoreErrors": "true"
+              }
+            }
+          }
+        }
+      },
+      "Properties": {
+        "KeyName": {
+          "Ref": "KeyName"
+        },
+        "Monitoring": "true",
+        "ImageId": {
+          "Fn::FindInMap": [
+            "AWSRegion2AMI",
+            {
+              "Ref": "AWS::Region"
+            },
+            "Windows2012r2"
+          ]
+        },
+        "InstanceType": {
+          "Ref": "InstanceType"
+        },
+        "IamInstanceProfile": {
+          "Ref": "InstanceProfile"
+        },
+        "BlockDeviceMappings": [
+          {
+            "DeviceName": "/dev/sda1",
+            "Ebs": {
+              "DeleteOnTermination": true
+            }
+          },
+          {
+            "Fn::If": [
+              "IsDataVolume",
+              {
+                "DeviceName": "/dev/xvdf",
+                "Ebs": {
+                  "SnapshotId": {
+                    "Ref": "DataVolumeSnapshotId"
+                  },
+                  "DeleteOnTermination": {
+                    "Ref": "DataVolumeDeleteOnTermination"
+                  },
+                  "VolumeSize": {
+                    "Ref": "DataVolumeSize"
+                  },
+                  "VolumeType": {
+                    "Ref": "DataVolumeType"
+                  }
+                }
+              },
+              {
+                "Ref": "AWS::NoValue"
+              }
+            ]
+          }
+        ],
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "",
+              [
+                "<script>\n",
+                "cfn-init.exe -v -c config -s ",
+                {
+                  "Ref": "AWS::StackId"
+                },
+                " -r Instance",
+                " --region ",
+                {
+                  "Ref": "AWS::Region"
+                },
+                "\n",
+                "</script>\n"
+              ]
+            ]
+          }
+        },
+        "NetworkInterfaces": [
+          {
+            "AssociatePublicIpAddress": "false",
+            "DeviceIndex": "0",
+            "DeleteOnTermination": "true",
+            "SubnetId": {
+              "Fn::GetAtt": [
+                "VPCInfo",
+                "PrivateSubnet0"
+              ]
+            },
+            "GroupSet": [
+              {
+                "Ref": "SecurityGroup"
+              }
+            ]
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "-",
+                [
+                  {
+                    "Ref": "ServiceName"
+                  }
+                ]
+              ]
+            }
+          },
+          {
+            "Key": "Stack",
+            "Value": {
+              "Ref": "AWS::StackName"
+            }
+          }
+        ]
+      }
+    },
+    "SecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Enable SSH access from the Internet",
+        "VpcId": {
+          "Fn::GetAtt": [
+            "VPCInfo",
+            "VPCId"
+          ]
+        },
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "3389",
+            "ToPort": "3389",
+            "CidrIp": {
+              "Fn::GetAtt": [
+                "VPCInfo",
+                "VPCCidrBlock"
+              ]
+            }
+          }
+        ],
+        "SecurityGroupEgress": [],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "-",
+                [
+                  {
+                    "Ref": "ServiceName"
+                  },
+                  {
+                    "Ref": "Environment"
+                  }
+                ]
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "InstanceProfile": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Properties": {
+        "Path": "/",
+        "Roles": [
+          {
+            "Ref": "InstanceRole"
+          }
+        ]
+      }
+    },
+    "InstanceRolePolicies": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyName": "stand-alone-windows-instance",
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "CloudWatchLogs",
+              "Effect": "Allow",
+              "Action": [
+                "cloudwatch:PutMetricData",
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:DescribeLogGroups",
+                "logs:DescribeLogStreams",
+                "logs:PutLogEvents"
+              ],
+              "Resource": [
+                "*"
+              ]
+            },
+            {
+              "Sid": "SSM",
+              "Effect": "Allow",
+              "Action": [
+                "ssm:UpdateInstanceInformation",
+                "ssm:ListAssociations"
+              ],
+              "Resource": [
+                "*"
+              ]
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObject"
+              ],
+              "Resource": [
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:s3:::",
+                      {
+                        "Fn::FindInMap": [
+                          {
+                            "Ref": "AWS::AccountId"
+                          },
+                          {
+                            "Ref": "AWS::Region"
+                          },
+                          "CloudFormationResourceBucketName"
+                        ]
+                      },
+                      "/*"
+                    ]
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "Roles": [
+          {
+            "Ref": "InstanceRole"
+          }
+        ]
+      }
+    },
+    "InstanceRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "ec2.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Path": "/"
+      }
+    },
+    "VPCInfo": {
+      "Type": "Custom::VPCInfo",
+      "Properties": {
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "LookupStackOutputs",
+            "Arn"
+          ]
+        },
+        "StackName": {
+          "Ref": "VPCStackName"
+        }
+      }
+    },
+    "LookupStackOutputs": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "LambdaExecutionRole",
+            "Arn"
+          ]
+        },
+        "Code": {
+          "ZipFile": {
+            "Fn::Join": [
+              "\n",
+              [
+                "var response = require('cfn-response');",
+                "exports.handler = function(event, context) {",
+                "    console.log('REQUEST RECEIVED:\\n', JSON.stringify(event));",
+                "    if (event.RequestType == 'Delete') {",
+                "        response.send(event, context, response.SUCCESS);",
+                "        return;",
+                "    }",
+                "    var stackName = event.ResourceProperties.StackName;",
+                "    var responseData = {};",
+                "    if (stackName) {",
+                "        var aws = require('aws-sdk');",
+                "        var cfn = new aws.CloudFormation();",
+                "        cfn.describeStacks({StackName: stackName}, function(err, data) {",
+                "            if (err) {",
+                "                responseData = {Error: 'DescribeStacks call failed'};",
+                "                console.log(responseData.Error + ':\\n', err);",
+                "                response.send(event, context, response.FAILED, responseData);",
+                "            }",
+                "            else {",
+                "                data.Stacks[0].Outputs.forEach(function(output) {",
+                "                    responseData[output.OutputKey] = output.OutputValue;",
+                "                });",
+                "                response.send(event, context, response.SUCCESS, responseData);",
+                "            }",
+                "        });",
+                "    } else {",
+                "        responseData = {Error: 'Stack name not specified'};",
+                "        console.log(responseData.Error);",
+                "        response.send(event, context, response.FAILED, responseData);",
+                "    }",
+                "};"
+              ]
+            ]
+          }
+        },
+        "Runtime": "nodejs",
+        "Timeout": "30"
+      }
+    },
+    "LambdaExecutionRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "lambda.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Path": "/",
+        "Policies": [
+          {
+            "PolicyName": "cfn-lambda-execution",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:*"
+                  ],
+                  "Resource": "arn:aws:logs:*:*:*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "cloudformation:DescribeStacks"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  "Outputs": {}
+}

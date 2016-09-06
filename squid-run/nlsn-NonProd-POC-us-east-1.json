@@ -1,11 +1,11 @@
 [
   {
     "ParameterKey": "ServiceName",
-    "ParameterValue": "CloudFormationInit"
+    "ParameterValue": "EMMProxy"
   },
   {
     "ParameterKey": "ApplicationName",
-    "ParameterValue": "Watch Digital Engineering General"
+    "ParameterValue": "EMM iOS Proxy"
   },  
   {
     "ParameterKey": "AccountName",

@@ -1,0 +1,1015 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Squid Proxy Cluster Build",
+  "Parameters": {
+    "ServiceName": {
+      "Description": "Becomes the short hostname used in DNS, Naming, Comments, and other things.",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255,
+      "AllowedPattern": "^[a-zA-Z][-a-zA-Z0-9]*$"
+    },
+    "ApplicationName": {
+      "Description": "Application Name from CMDB",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255
+    },
+    "Environment": {
+      "Description": "The Runtime Environment",
+      "Type": "String",
+      "Default": "Default",
+      "AllowedValues": [
+        "Default",
+        "POC",
+        "ITG",
+        "QA",
+        "UAT",
+        "PROD-BLUE",
+        "PROD-GREEN"
+      ]
+    },
+    "CostCenter": {
+      "Description": "CostCenter for Billing",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 9,
+      "AllowedPattern": "^[0-9]*$"
+    },
+    "CreatedBy": {
+      "Description": "Stack Creation User",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 8,
+      "AllowedPattern": "^[a-zA-Z][-a-zA-Z0-9]*$"
+    },
+    "AccountName": {
+      "Description": "Name for the Current AWS Account",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255,
+      "AllowedPattern": "^[a-zA-Z][-a-zA-Z0-9]*$"
+    },
+    "KeyName": {
+      "Description": "Name of an existing EC2 KeyPair",
+      "Type": "AWS::EC2::KeyPair::KeyName",
+      "Default": "kevinz",
+      "ConstraintDescription": "must be the name of an existing EC2 KeyPair."
+    },
+    "VPCId": {
+      "Description": "VPC Id",
+      "Type": "AWS::EC2::VPC::Id"
+    },
+    "VPCCidrBlock": {
+      "Description": "VPC CIDR Block",
+      "Type": "String",
+      "Default": ""
+    },
+    "SubnetId": {
+      "Description": "Id of Private Subnet",
+      "Type": "AWS::EC2::Subnet::Id"
+    },
+    "AMIName": {
+      "Description": "Amazon Machine Image Name",
+      "Type": "String"
+    },
+    "AMIVersion": {
+      "Description": "AMI Version",
+      "Type": "String"
+    },
+    "RetainAMI": {
+      "Description": "If true will not delete AMI on stack delete",
+      "Type": "String",
+      "AllowedValues": [
+        "true",
+        "false"
+      ],
+      "Default": "false"
+    },
+    "ResourceBucketName": {
+      "Description": "CloudFormation Resources S3 Bucket Name",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255,
+      "AllowedPattern": "^[a-z][-a-z0-9]*$"
+    },
+    "InstanceType": {
+      "Description": "Amazon EC2 instance type",
+      "Type": "String",
+      "Default": "m1.large",
+      "AllowedValues": [
+        "t1.micro",
+        "t2.micro",
+        "t2.small",
+        "t2.medium",
+        "m1.small",
+        "m1.medium",
+        "m1.large",
+        "m1.xlarge",
+        "m2.xlarge",
+        "m2.2xlarge",
+        "m2.4xlarge",
+        "m3.medium",
+        "m3.large",
+        "m3.xlarge",
+        "m3.2xlarge",
+        "c1.medium",
+        "c1.xlarge",
+        "c3.large",
+        "c3.xlarge",
+        "c3.2xlarge",
+        "c3.4xlarge",
+        "c3.8xlarge",
+        "c4.large",
+        "c4.xlarge",
+        "c4.2xlarge",
+        "c4.4xlarge",
+        "c4.8xlarge",
+        "g2.2xlarge",
+        "r3.large",
+        "r3.xlarge",
+        "r3.2xlarge",
+        "r3.4xlarge",
+        "r3.8xlarge",
+        "i2.xlarge",
+        "i2.2xlarge",
+        "i2.4xlarge",
+        "i2.8xlarge",
+        "d2.xlarge",
+        "d2.2xlarge",
+        "d2.4xlarge",
+        "d2.8xlarge",
+        "hi1.4xlarge",
+        "hs1.8xlarge",
+        "cr1.8xlarge",
+        "cc2.8xlarge",
+        "cg1.4xlarge"
+      ],
+      "ConstraintDescription": "must be a valid EC2 instance type."
+    },
+    "DebugInstance": {
+      "Description": "If 'yes', will not kill the ImageInstance",
+      "Type": "String",
+      "AllowedValues": [
+        "yes",
+        "no"
+      ],
+      "Default": "no"
+    }
+  },
+  "Conditions": {
+    "DebugInstanceDisabled": {
+      "Fn::Equals": [
+        {
+          "Ref": "DebugInstance"
+        },
+        "no"
+      ]
+    },
+    "RetainAMI": {
+      "Fn::Equals": [
+        {
+          "Ref": "RetainAMI"
+        },
+        "true"
+      ]
+    }
+  },
+  "Mappings": {
+    "AWSInstanceType2Arch": {
+      "t1.micro": {
+        "Arch": "PV64"
+      },
+      "t2.micro": {
+        "Arch": "HVM64"
+      },
+      "t2.small": {
+        "Arch": "HVM64"
+      },
+      "t2.medium": {
+        "Arch": "HVM64"
+      },
+      "m1.small": {
+        "Arch": "PV64"
+      },
+      "m1.medium": {
+        "Arch": "PV64"
+      },
+      "m1.large": {
+        "Arch": "PV64"
+      },
+      "m1.xlarge": {
+        "Arch": "PV64"
+      },
+      "m2.xlarge": {
+        "Arch": "PV64"
+      },
+      "m2.2xlarge": {
+        "Arch": "PV64"
+      },
+      "m2.4xlarge": {
+        "Arch": "PV64"
+      },
+      "m3.medium": {
+        "Arch": "HVM64"
+      },
+      "m3.large": {
+        "Arch": "HVM64"
+      },
+      "m3.xlarge": {
+        "Arch": "HVM64"
+      },
+      "m3.2xlarge": {
+        "Arch": "HVM64"
+      },
+      "c1.medium": {
+        "Arch": "PV64"
+      },
+      "c1.xlarge": {
+        "Arch": "PV64"
+      },
+      "c3.large": {
+        "Arch": "HVM64"
+      },
+      "c3.xlarge": {
+        "Arch": "HVM64"
+      },
+      "c3.2xlarge": {
+        "Arch": "HVM64"
+      },
+      "c3.4xlarge": {
+        "Arch": "HVM64"
+      },
+      "c3.8xlarge": {
+        "Arch": "HVM64"
+      },
+      "g2.2xlarge": {
+        "Arch": "HVMG2"
+      },
+      "r3.large": {
+        "Arch": "HVM64"
+      },
+      "r3.xlarge": {
+        "Arch": "HVM64"
+      },
+      "r3.2xlarge": {
+        "Arch": "HVM64"
+      },
+      "r3.4xlarge": {
+        "Arch": "HVM64"
+      },
+      "r3.8xlarge": {
+        "Arch": "HVM64"
+      },
+      "i2.xlarge": {
+        "Arch": "HVM64"
+      },
+      "i2.2xlarge": {
+        "Arch": "HVM64"
+      },
+      "i2.4xlarge": {
+        "Arch": "HVM64"
+      },
+      "i2.8xlarge": {
+        "Arch": "HVM64"
+      },
+      "hi1.4xlarge": {
+        "Arch": "HVM64"
+      },
+      "hs1.8xlarge": {
+        "Arch": "HVM64"
+      },
+      "cr1.8xlarge": {
+        "Arch": "HVM64"
+      },
+      "cc2.8xlarge": {
+        "Arch": "HVM64"
+      }
+    },
+    "AWSRegionArch2AMI": {
+      "us-east-1": {
+        "PV64": "ami-c02b04a8",
+        "HVM64": "ami-b0210ed8",
+        "HVMG2": "ami-303b1458"
+      },
+      "us-west-2": {
+        "PV64": "ami-2dae821d",
+        "HVM64": "ami-75ae8245",
+        "HVMG2": "ami-69ae8259"
+      },
+      "us-west-1": {
+        "PV64": "ami-67a54423",
+        "HVM64": "ami-ada746e9",
+        "HVMG2": "ami-7da94839"
+      },
+      "eu-west-1": {
+        "PV64": "ami-aa8f28dd",
+        "HVM64": "ami-748e2903",
+        "HVMG2": "ami-00913777"
+      },
+      "ap-southeast-1": {
+        "PV64": "ami-20e1c572",
+        "HVM64": "ami-d6e1c584",
+        "HVMG2": "ami-fabe9aa8"
+      },
+      "ap-northeast-1": {
+        "PV64": "ami-21072820",
+        "HVM64": "ami-35072834",
+        "HVMG2": "ami-5dd1ff5c"
+      },
+      "ap-southeast-2": {
+        "PV64": "ami-8b4724b1",
+        "HVM64": "ami-fd4724c7",
+        "HVMG2": "ami-e98ae9d3"
+      },
+      "sa-east-1": {
+        "PV64": "ami-9d6cc680",
+        "HVM64": "ami-956cc688",
+        "HVMG2": "NOT_SUPPORTED"
+      },
+      "cn-north-1": {
+        "PV64": "ami-a857c591",
+        "HVM64": "ami-ac57c595",
+        "HVMG2": "NOT_SUPPORTED"
+      },
+      "eu-central-1": {
+        "PV64": "ami-a03503bd",
+        "HVM64": "ami-b43503a9",
+        "HVMG2": "ami-b03503ad"
+      }
+    },
+    "AWSRegionMap": {
+      "us-east-1": {
+        "AWSAccountId": "127311923021"
+      },
+      "us-west-2": {
+        "AWSAccountId": "797873946194"
+      },
+      "us-west-1": {
+        "AWSAccountId": "027434742980"
+      },
+      "eu-west-1": {
+        "AWSAccountId": "156460612806"
+      },
+      "eu-central-1": {
+        "AWSAccountId": "054676820928"
+      },
+      "ap-northeast-1": {
+        "AWSAccountId": "582318560864"
+      },
+      "ap-southeast-1": {
+        "AWSAccountId": "114774131450"
+      },
+      "ap-southeast-2": {
+        "AWSAccountId": "797873946194"
+      },
+      "sa-east-1": {
+        "AWSAccountId": "507241528517"
+      },
+      "cn-north-1": {
+        "AWSAccountId": "638102146993"
+      }
+    }
+  },
+  "Resources": {
+    "Instance": {
+      "Type": "AWS::EC2::Instance",
+      "Metadata": {
+        "AWS::CloudFormation::Authentication": {
+          "S3AccessCreds": {
+            "type": "S3",
+            "roleName": {
+              "Ref": "InstanceRole"
+            }
+          }
+        },
+        "AWS::CloudFormation::Init": {
+          "configSets": {
+            "config": [
+              "setup",
+              "finalize"
+            ]
+          },
+          "setup": {
+            "files": {
+              "/etc/squid/squid.conf": {
+                "authentication": "S3AccessCreds",
+                "source": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "https://s3.amazonaws.com/",
+                      {
+                        "Ref": "ResourceBucketName"
+                      },
+                      "/squid.conf"
+                    ]
+                  ]
+                }
+              }
+            },
+            "commands": {
+              "1-start": {
+                "command": {
+                  "Fn::Join": [
+                    "\n",
+                    [
+                      "yum -y install squid",
+                      "chkconfig squid on",
+                      "service squid start"
+                    ]
+                  ]
+                }
+              }
+            }
+          },
+          "finalize": {
+            "commands": {
+              "1-signal-instance": {
+                "command": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "/opt/aws/bin/cfn-signal -e 0 \"",
+                      {
+                        "Ref": "InstanceWaitHandle"
+                      },
+                      "\""
+                    ]
+                  ]
+                }
+              },
+              "2-wait-for-ami": {
+                "command": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "aws ec2 wait image-available --filters=Name=tag-value,Values=",
+                      {
+                        "Ref": "AWS::StackId"
+                      },
+                      "  --region=",
+                      {
+                        "Ref": "AWS::Region"
+                      }
+                    ]
+                  ]
+                }
+              },
+              "3-signal-ami": {
+                "command": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "/opt/aws/bin/cfn-signal -e 0 \"",
+                      {
+                        "Ref": "AMIWaitHandle"
+                      },
+                      "\""
+                    ]
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "Properties": {
+        "KeyName": {
+          "Ref": "KeyName"
+        },
+        "Monitoring": "false",
+        "ImageId": {
+          "Fn::FindInMap": [
+            "AWSRegionArch2AMI",
+            {
+              "Ref": "AWS::Region"
+            },
+            {
+              "Fn::FindInMap": [
+                "AWSInstanceType2Arch",
+                {
+                  "Ref": "InstanceType"
+                },
+                "Arch"
+              ]
+            }
+          ]
+        },
+        "InstanceType": {
+          "Ref": "InstanceType"
+        },
+        "IamInstanceProfile": {
+          "Ref": "InstanceProfile"
+        },
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "",
+              [
+                "#!/bin/bash -xe\n",
+                "yum -y update\n",
+                "yum update -y aws-cfn-bootstrap\n",
+                "# Install the files and packages from the metadata\n",
+                "/opt/aws/bin/cfn-init -v --stack ",
+                {
+                  "Ref": "AWS::StackName"
+                },
+                "         --resource Instance ",
+                "         --configsets config ",
+                "         --region ",
+                {
+                  "Ref": "AWS::Region"
+                }
+              ]
+            ]
+          }
+        },
+        "NetworkInterfaces": [
+          {
+            "AssociatePublicIpAddress": "false",
+            "DeviceIndex": "0",
+            "DeleteOnTermination": "true",
+            "SubnetId": {
+              "Ref": "SubnetId"
+            },
+            "GroupSet": [
+              {
+                "Ref": "SecurityGroup"
+              }
+            ]
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "-",
+                [
+                  {
+                    "Ref": "ServiceName"
+                  }
+                ]
+              ]
+            }
+          },
+          {
+            "Key": "CostCenter",
+            "Value": {
+              "Ref": "CostCenter"
+            }
+          },
+          {
+            "Key": "ApplicationName",
+            "Value": {
+              "Ref": "ApplicationName"
+            }
+          },
+          {
+            "Key": "CreatedBy",
+            "Value": {
+              "Ref": "CreatedBy"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          }
+        ]
+      }
+    },
+    "SecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Enable SSH access from VPC",
+        "VpcId": {
+          "Ref": "VPCId"
+        },
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "22",
+            "ToPort": "22",
+            "CidrIp": {
+              "Ref": "VPCCidrBlock"
+            }
+          }
+        ],
+        "SecurityGroupEgress": [],
+        "Tags": [
+          {
+            "Key": "CostCenter",
+            "Value": {
+              "Ref": "CostCenter"
+            }
+          },
+          {
+            "Key": "ApplicationName",
+            "Value": {
+              "Ref": "ApplicationName"
+            }
+          },
+          {
+            "Key": "CreatedBy",
+            "Value": {
+              "Ref": "CreatedBy"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Environment"
+            }
+          }
+        ]
+      }
+    },
+    "InstanceProfile": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Properties": {
+        "Path": "/",
+        "Roles": [
+          {
+            "Ref": "InstanceRole"
+          }
+        ]
+      }
+    },
+    "InstanceRolePolicies": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyName": "stand-alone-windows-instance",
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "CloudWatchLogs",
+              "Effect": "Allow",
+              "Action": [
+                "cloudwatch:PutMetricData",
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:DescribeLogGroups",
+                "logs:DescribeLogStreams",
+                "logs:PutLogEvents",
+                "ec2:DescribeImages"
+              ],
+              "Resource": [
+                "*"
+              ]
+            },
+            {
+              "Sid": "SSM",
+              "Effect": "Allow",
+              "Action": [
+                "ssm:UpdateInstanceInformation",
+                "ssm:ListAssociations"
+              ],
+              "Resource": [
+                "*"
+              ]
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObject"
+              ],
+              "Resource": [
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:s3:::",
+                      {
+                        "Ref": "ResourceBucketName"
+                      },
+                      "/*"
+                    ]
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "Roles": [
+          {
+            "Ref": "InstanceRole"
+          }
+        ]
+      }
+    },
+    "InstanceRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "ec2.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Path": "/"
+      }
+    },
+    "AMI": {
+      "Type": "Custom::AMI",
+      "DeletionPolicy": "Retain",
+      "DependsOn": "InstanceWaitCondition",
+      "Properties": {
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "AMIFunc",
+            "Arn"
+          ]
+        },
+        "InstanceId": {
+          "Ref": "Instance"
+        },
+        "ServiceName": {
+          "Ref": "ServiceName"
+        },
+        "AMIName": {
+          "Ref": "AMIName"
+        },
+        "AMIVersion": {
+          "Ref": "AMIVersion"
+        },
+        "StackId": {
+          "Ref": "AWS::StackId"
+        },
+        "Description": {
+          "Fn::Join": [
+            "-",
+            [
+              {
+                "Ref": "ServiceName"
+              },
+              {
+                "Ref": "AWS::StackId"
+              },
+              "Instance AMI"
+            ]
+          ]
+        }
+      }
+    },
+    "AMIFunc": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Description": "Create AMI of Instance",
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "AMIExecutionRole",
+            "Arn"
+          ]
+        },
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ResourceBucketName"
+          },
+          "S3Key": {
+            "Fn::Join": [
+              "",
+              [
+                {
+                  "Ref": "ServiceName"
+                },
+                "-ami.zip"
+              ]
+            ]
+          }
+        },
+        "Runtime": "nodejs"
+      }
+    },
+    "AMIExecutionRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "lambda.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Path": "/",
+        "Policies": [
+          {
+            "PolicyName": "InstanceAMI",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:*"
+                  ],
+                  "Resource": "arn:aws:logs:*:*:*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "cloudformation:DescribeStacks"
+                  ],
+                  "Resource": "*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "ec2:CreateImage",
+                    "ec2:DeregisterImage",
+                    "ec2:DescribeImages",
+                    "ec2:CreateTags"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "AMIWaitCondition": {
+      "Type": "AWS::CloudFormation::WaitCondition",
+      "Properties": {
+        "Handle": {
+          "Ref": "AMIWaitHandle"
+        },
+        "Timeout": "3600"
+      }
+    },
+    "AMIWaitHandle": {
+      "Type": "AWS::CloudFormation::WaitConditionHandle"
+    },
+    "InstanceWaitCondition": {
+      "Type": "AWS::CloudFormation::WaitCondition",
+      "DependsOn": "Instance",
+      "Properties": {
+        "Handle": {
+          "Ref": "InstanceWaitHandle"
+        },
+        "Timeout": "3600"
+      }
+    },
+    "InstanceWaitHandle": {
+      "Type": "AWS::CloudFormation::WaitConditionHandle"
+    },
+    "TerminateInstance": {
+      "Condition": "DebugInstanceDisabled",
+      "Type": "Custom::TerminateInstance",
+      "DependsOn": "AMIWaitCondition",
+      "Properties": {
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "TerminateInstanceFunc",
+            "Arn"
+          ]
+        },
+        "InstanceId": {
+          "Ref": "Instance"
+        }
+      }
+    },
+    "TerminateInstanceFunc": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Description": "Terminates an EC2 Instance",
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "TerminateInstanceExecutionRole",
+            "Arn"
+          ]
+        },
+        "Code": {
+          "ZipFile": {
+            "Fn::Join": [
+              "\n",
+              [
+                "var AWS = require('aws-sdk');",
+                "var response = require('cfn-response');",
+                "exports.handler = function(event, context) {",
+                "    console.log('REQUEST RECEIVED:\\n', JSON.stringify(event));",
+                "    if (event.RequestType == 'Delete') {",
+                "        response.send(event, context, response.SUCCESS);",
+                "        return;",
+                "    }",
+                "    var ec2 = new AWS.EC2();",
+                "    console.log('Terminating instance ...');",
+                "    var params = {",
+                "      InstanceIds: [",
+                "        event.ResourceProperties.InstanceId",
+                "      ]",
+                "    };",
+                "    ec2.terminateInstances(params, function(err, data) {",
+                "            if (err) {",
+                "                console.log(err);",
+                "                response.send(event, context, response.FAILED, {Error:err});",
+                "            } else {",
+                "                response.send(event, context, response.SUCCESS, {Data:data});",
+                "            }",
+                "    });",
+                "};"
+              ]
+            ]
+          }
+        },
+        "Runtime": "nodejs",
+        "Timeout": "30"
+      }
+    },
+    "TerminateInstanceExecutionRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "lambda.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Path": "/",
+        "Policies": [
+          {
+            "PolicyName": "CfnTerminateInstance",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:*"
+                  ],
+                  "Resource": "arn:aws:logs:*:*:*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "ec2:TerminateInstances"
+                  ],
+                  "Resource": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:aws:ec2:",
+                        {
+                          "Ref": "AWS::Region"
+                        },
+                        ":",
+                        {
+                          "Ref": "AWS::AccountId"
+                        },
+                        ":instance/",
+                        {
+                          "Ref": "Instance"
+                        }
+                      ]
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  "Outputs": {
+    "AMIId": {
+      "Value": {
+        "Ref": "AMI"
+      },
+      "Description": "AMI Id"
+    }    
+  }
+}

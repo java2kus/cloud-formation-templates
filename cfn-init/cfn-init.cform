@@ -9,6 +9,12 @@
       "MaxLength": 255,
       "AllowedPattern": "^[a-zA-Z][-a-zA-Z0-9]*$"
     },
+    "ApplicationName": {
+      "Description": "Application Name from CMDB",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255
+    },    
     "Environment": {
       "Description": "The Runtime Environment",
       "Type": "String",
@@ -141,7 +147,7 @@
           {
             "Key": "ApplicationName",
             "Value": {
-              "Ref": "ServiceName"
+              "Ref": "ApplicationName"
             }
           },
           {
@@ -239,7 +245,7 @@
           {
             "Key": "ApplicationName",
             "Value": {
-              "Ref": "ServiceName"
+              "Ref": "ApplicationName"
             }
           },
           {

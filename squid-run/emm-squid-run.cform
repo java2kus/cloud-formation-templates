@@ -9,6 +9,12 @@
       "MaxLength": 255,
       "AllowedPattern": "^[a-zA-Z][-a-zA-Z0-9]*$"
     },
+    "ApplicationName": {
+      "Description": "Application Name from CMDB",
+      "Type": "String",
+      "MinLength": 1,
+      "MaxLength": 255
+    },
     "Environment": {
       "Description": "The Runtime Environment",
       "Type": "String",
@@ -31,22 +37,18 @@
       "AllowedPattern": "^[0-9]*$"
     },
     "CreatedBy": {
-      "Description": "CostCenter for Billing",
+      "Description": "Stack Creation User",
       "Type": "String",
       "MinLength": 1,
       "MaxLength": 8,
       "AllowedPattern": "^[a-zA-Z][-a-zA-Z0-9]*$"
     },
     "AccountName": {
-      "Description": "Name for the current AWS Account",
+      "Description": "Name for the Current AWS Account",
       "Type": "String",
       "MinLength": 1,
       "MaxLength": 255,
       "AllowedPattern": "^[a-zA-Z][-a-zA-Z0-9]*$"
-    },
-    "AMI": {
-      "Description": "Amazon Machine Image Id Used to Launch Cluster",
-      "Type": "AWS::EC2::Image::Id"
     },
     "InstancePort": {
       "Description": "Instance HTTP Listen Port",
@@ -239,6 +241,168 @@
     }
   },
   "Mappings": {
+    "AWSInstanceType2Arch": {
+      "t1.micro": {
+        "Arch": "PV64"
+      },
+      "t2.micro": {
+        "Arch": "HVM64"
+      },
+      "t2.small": {
+        "Arch": "HVM64"
+      },
+      "t2.medium": {
+        "Arch": "HVM64"
+      },
+      "m1.small": {
+        "Arch": "PV64"
+      },
+      "m1.medium": {
+        "Arch": "PV64"
+      },
+      "m1.large": {
+        "Arch": "PV64"
+      },
+      "m1.xlarge": {
+        "Arch": "PV64"
+      },
+      "m2.xlarge": {
+        "Arch": "PV64"
+      },
+      "m2.2xlarge": {
+        "Arch": "PV64"
+      },
+      "m2.4xlarge": {
+        "Arch": "PV64"
+      },
+      "m3.medium": {
+        "Arch": "HVM64"
+      },
+      "m3.large": {
+        "Arch": "HVM64"
+      },
+      "m3.xlarge": {
+        "Arch": "HVM64"
+      },
+      "m3.2xlarge": {
+        "Arch": "HVM64"
+      },
+      "c1.medium": {
+        "Arch": "PV64"
+      },
+      "c1.xlarge": {
+        "Arch": "PV64"
+      },
+      "c3.large": {
+        "Arch": "HVM64"
+      },
+      "c3.xlarge": {
+        "Arch": "HVM64"
+      },
+      "c3.2xlarge": {
+        "Arch": "HVM64"
+      },
+      "c3.4xlarge": {
+        "Arch": "HVM64"
+      },
+      "c3.8xlarge": {
+        "Arch": "HVM64"
+      },
+      "g2.2xlarge": {
+        "Arch": "HVMG2"
+      },
+      "r3.large": {
+        "Arch": "HVM64"
+      },
+      "r3.xlarge": {
+        "Arch": "HVM64"
+      },
+      "r3.2xlarge": {
+        "Arch": "HVM64"
+      },
+      "r3.4xlarge": {
+        "Arch": "HVM64"
+      },
+      "r3.8xlarge": {
+        "Arch": "HVM64"
+      },
+      "i2.xlarge": {
+        "Arch": "HVM64"
+      },
+      "i2.2xlarge": {
+        "Arch": "HVM64"
+      },
+      "i2.4xlarge": {
+        "Arch": "HVM64"
+      },
+      "i2.8xlarge": {
+        "Arch": "HVM64"
+      },
+      "hi1.4xlarge": {
+        "Arch": "HVM64"
+      },
+      "hs1.8xlarge": {
+        "Arch": "HVM64"
+      },
+      "cr1.8xlarge": {
+        "Arch": "HVM64"
+      },
+      "cc2.8xlarge": {
+        "Arch": "HVM64"
+      }
+    },
+    "AWSRegionArch2AMI": {
+      "us-east-1": {
+        "PV64": "ami-c02b04a8",
+        "HVM64": "ami-b0210ed8",
+        "HVMG2": "ami-303b1458"
+      },
+      "us-west-2": {
+        "PV64": "ami-2dae821d",
+        "HVM64": "ami-75ae8245",
+        "HVMG2": "ami-69ae8259"
+      },
+      "us-west-1": {
+        "PV64": "ami-67a54423",
+        "HVM64": "ami-ada746e9",
+        "HVMG2": "ami-7da94839"
+      },
+      "eu-west-1": {
+        "PV64": "ami-aa8f28dd",
+        "HVM64": "ami-748e2903",
+        "HVMG2": "ami-00913777"
+      },
+      "ap-southeast-1": {
+        "PV64": "ami-20e1c572",
+        "HVM64": "ami-d6e1c584",
+        "HVMG2": "ami-fabe9aa8"
+      },
+      "ap-northeast-1": {
+        "PV64": "ami-21072820",
+        "HVM64": "ami-35072834",
+        "HVMG2": "ami-5dd1ff5c"
+      },
+      "ap-southeast-2": {
+        "PV64": "ami-8b4724b1",
+        "HVM64": "ami-fd4724c7",
+        "HVMG2": "ami-e98ae9d3"
+      },
+      "sa-east-1": {
+        "PV64": "ami-9d6cc680",
+        "HVM64": "ami-956cc688",
+        "HVMG2": "NOT_SUPPORTED"
+      },
+      "cn-north-1": {
+        "PV64": "ami-a857c591",
+        "HVM64": "ami-ac57c595",
+        "HVMG2": "NOT_SUPPORTED"
+      },
+      "eu-central-1": {
+        "PV64": "ami-a03503bd",
+        "HVM64": "ami-b43503a9",
+        "HVMG2": "ami-b03503ad"
+      }
+    },
     "AWSRegionMap": {
       "us-east-1": {
         "AWSAccountId": "127311923021"

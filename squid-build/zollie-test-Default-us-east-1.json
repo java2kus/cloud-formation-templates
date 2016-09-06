@@ -1,0 +1,66 @@
+[
+  {
+    "ParameterKey": "ServiceName",
+    "ParameterValue": "EMMSquidProxyBuild"
+  },
+  {
+    "ParameterKey": "ApplicationName",
+    "ParameterValue": "Watch Digital Engineering General"
+  },
+  {
+    "ParameterKey": "AccountName",
+    "ParameterValue": "NonProd"
+  },
+  {
+    "ParameterKey": "Environment",
+    "ParameterValue": "POC"
+  },
+  {
+    "ParameterKey": "CostCenter",
+    "ParameterValue": "5501983"
+  },
+  {
+    "ParameterKey": "CreatedBy",
+    "ParameterValue": "zollke01"
+  },
+  {
+    "ParameterKey": "KeyName",
+    "ParameterValue": "nlsn"
+  },
+  {
+    "ParameterKey": "VPCId",
+    "ParameterValue": "vpc-6bfc530c"
+  },
+  {
+    "ParameterKey": "VPCCidrBlock",
+    "ParameterValue": "10.0.0.0/16"
+  },
+  {
+    "ParameterKey": "SubnetId",
+    "ParameterValue": "subnet-f78ec4dd"
+  },
+  {
+    "ParameterKey": "AMIName",
+    "ParameterValue": "/NLSN/Watch/Digital/Engineering/EMM/Proxy"
+  },
+  {
+    "ParameterKey": "AMIVersion",
+    "ParameterValue": "0.0.1"
+  },
+  {
+    "ParameterKey": "RetainAMI",
+    "ParameterValue": "true"
+  },  
+  {
+    "ParameterKey": "InstanceType",
+    "ParameterValue": "m1.medium"
+  },
+  {
+    "ParameterKey": "ResourceBucketName",
+    "ParameterValue": "zollie-cfn-resources-us-east-1-test"
+  },
+  {
+    "ParameterKey": "DebugInstance",
+    "ParameterValue": "no"
+  }
+]

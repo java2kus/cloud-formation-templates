@@ -1,9 +1,10 @@
-Creates a Squid EC2 AutoScale Cluster with Load Balancer
-===
+#EMM Squid Proxy Runtime
+
+Runs the EMM Squid Proxy AMI in an Autoscale cluster. 
 
 
-Usage
-=====
+##Usage
+
 For default Stack
 
 ```

@@ -4,6 +4,10 @@
     "ParameterValue": "CloudFormationInit"
   },
   {
+    "ParameterKey": "ApplicationName",
+    "ParameterValue": "CloudFormationInit"
+  },  
+  {
     "ParameterKey": "AccountName",
     "ParameterValue": "NonProd"
   },
